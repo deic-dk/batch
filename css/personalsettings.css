@@ -1,0 +1,30 @@
+#batchSettings .button {
+	margin-left: 2px;
+}
+
+.batchSettingsIcon {
+	width: 16px;
+	margin-left: 16px;
+	filter: invert(90%) sepia(9%) saturate(3383%) hue-rotate(14deg) brightness(92%) contrast(82%);
+}
+
+.batchAboutIcon {
+  width: 28px;
+  margin-left: 16px;
+  margin-bottom: 12px;
+  filter: invert(90%) sepia(9%) saturate(3383%) hue-rotate(14deg) brightness(92%) contrast(82%);
+}
+
+#batchSettings .batch_choose_script_folder {
+	margin-bottom: 6px;
+}
+
+#batch-info {
+  float: right;
+  margin-right: 8px;
+  margin-top: 23px;
+}
+
+.ui-widget-content a {
+  color: #0376a3;
+}

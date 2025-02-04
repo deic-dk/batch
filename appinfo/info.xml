@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+   <info>
+	<id>batch</id>
+	<name>ScienceData Batch Service</name>
+	<description>Process data</description>
+	<version>0.1</version>
+	<licence>AGPL </licence>
+	<author>Frederik Orellana</author>
+	<require>4.93</require>
+  </info>

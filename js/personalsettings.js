@@ -1,16 +1,16 @@
 function submit_batch_form(){
 	$.ajax({
 		type:'POST',
-		url:OC.linkTo('batch','ajax/updatePersonalSettings.php'),
+		url:OC.linkTo('batch','ajax/set_settings.php'),
 				dataType:'json',
-				data: {batch_script_folder:  getScriptFolder()},
+				data: {script_folder:  getScriptFolder()},
 				async: false,
 				success: function(s){
-					if(s.length!=0){
-						$("#batch_msg").html(s);
+					if(s.length!=0 && s.status){
+						OC.msg.finishedSaving('#batch_msg', {status: 'success', data: {message:  	t('batch', s.status)}});
 					}
 					else{
-						$("#batch_msg").html("Settings saved");
+						OC.msg.finishedSaving('#batch_msg', {status: 'success', data: {message:  	t('batch', 'Settings saved')}});
 					}
 				},
 				error:function(s){
@@ -19,23 +19,23 @@ function submit_batch_form(){
 	});
 }
 
-function get_default_batch_scripts(){
+function get_default_scripts(){
 	$.ajax({
 		type:'GET',
-		url:OC.linkTo('batch','ajax/getDefaultBatchScripts.php'),
+		url:OC.linkTo('batch','ajax/get_default_scripts.php'),
 				dataType:'json',
 				data: {},
 				async: false,
 				success: function(s){
-					if(s.length!=0){
-						$("#batch_msg").html(s);
+					if(s.length!=0 && s.status){
+						OC.msg.finishedSaving('#batch_scripts_msg', {status: 'success', data: {message:  	t('batch', s.status)}});
 					}
 					else{
-						$("#batch_msg").html("Settings saved");
+						OC.msg.finishedSaving('#batch_scripts_msg', {status: 'success', data: {message:  	t('batch', "Scripts copied to "+getScriptFolder())}});
 					}
 				},
 				error:function(s){
-					$("#batch_msg").html("Unexpected error!");
+					$("#batch_scripts_msg").html("Unexpected error!");
 				}
 	});
 }
@@ -104,7 +104,7 @@ $(document).ready(function(){
 	}
 	$("#get_default_batch_scripts").bind('click', function(){
 		if(!$(this).attr('disabled')){
-			get_default_batch_scripts();
+			get_default_scripts();
 		}
 	});
 	$("#batch-info").click(function (ev) {

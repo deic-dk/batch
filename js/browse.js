@@ -1,12 +1,12 @@
 function setScriptFolder(folder){
-  $('#batch_script_folder').val(folder);
+  $('#script_folder').val(folder);
 	if(folder){
 		enableGetDefaultBatchScripts(true);
 	}
 }
 
 function getScriptFolder(){
-  return $('#batch_script_folder').val();
+  return $('#script_folder').val();
 }
 
 function stripTrailingSlash(str) {
@@ -31,7 +31,7 @@ $(document).ready(function(){
 	var choose_script_folder_dialog;
 	var buttons = {};
 	buttons[t("batch", "Choose")] = function() {
-		folder = stripTrailingSlash($('#batch_script_folder').text());
+		folder = stripTrailingSlash($('#script_folder').text());
 		setScriptFolder(folder);
 		choose_script_folder_dialog.dialog("close");
  	};
@@ -73,7 +73,7 @@ $(document).ready(function(){
 	},
 	// single-click
 	function(file) {
-	  $('#batch_script_folder').text(file);
+	  $('#script_folder').text(file);
 	},
 	// double-click
 	function(file) {

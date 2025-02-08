@@ -20,7 +20,6 @@ OC_Util::addScript('files_markdown','marked');
 
 $tmpl = new OCP\Template('batch', 'main', 'user');
 $util = new OC_Batch_Util();
-//$tmpl->assign('job_templates', $util->getTemplates());
+$tmpl->assign('scripts', $util->getJobScripts());
 $tmpl->printPage();
 
-//$util->createStorageDir(OCP\User::getUser());

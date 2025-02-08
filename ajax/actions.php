@@ -1,50 +1,58 @@
 <?php
 
 OCP\JSON::checkLoggedIn();
-OCP\JSON::checkAppEnabled('user_pods');
+OCP\JSON::checkAppEnabled('batch');
 OCP\JSON::callCheck();
 
-$util = new OC_Kubernetes_Util();
+$util = new OC_Batch_Util();
 
-if($_REQUEST['action']=='create_pod'){
-	if(empty($_POST['yaml_file'])){
-		OCP\JSON::error(array('data' => array('message'=>'No YAML file specified')));
+if($_REQUEST['action']=='submit_job') {
+	if(empty($_POST['job_script'])){
+		OCP\JSON::error(array('data' => array('message'=>'No script file specified')));
 		exit;
 	}
-	$yaml_url = $util->rawManifestsURL.trim($_POST['yaml_file']);
-	$json = $util->createPod(OCP\User::getUser(), $yaml_url, trim($_POST['public_key']),
-			trim($_POST['storage_path']), trim($_POST['cvmfs_repos']), trim($_POST['file']),
-			trim($_POST['setup_script']), trim($_POST['peers']));
-	$status = $json['status'];
-	$message = $json['data']['message'];
-	$name = $json['data']['name'];
-	if($status=='success'){
-		OCP\JSON::success(array('data' => array('podName' => $name)));
+	$res = $util->submitJobScript($_POST['job_script']);
+	if(!empty($res)){
+		OCP\JSON::success();
 	}
 	else{
-		OCP\JSON::error(array('data' => array('message'=>'Problem creating pod. '.$name.': '.$message)));
+		OCP\JSON::error(array('data' => array('message'=>'Problem submitting script '.$_POST['job_script'])));
 	}
 }
-elseif($_REQUEST['action']=='delete_pod') {
-	$json = $util->deletePod($_REQUEST['pod_name'], OCP\User::getUser());
-	$status = $json['status'];
-	$message = $json['data']['message'];
-	if($status=='success'){
-		OCP\JSON::success(array('message'=>$message, 'pod'=>$_REQUEST['pod_name']));
+elseif($_REQUEST['action']=='delete_job') {
+	if(empty($_REQUEST['job_id'])){
+		OCP\JSON::error(array('data' => array('message'=>'No job specified')));
+		exit;
+	}
+	$res = $util->deleteJob($_REQUEST['job_id']);
+	if(!empty($res)){
+		OCP\JSON::success();
 	}
 	else{
-		\OC_Log::write('user_pods', "Failed deleting pod. " . serialize($json), \OC_Log::ERROR);
-		OCP\JSON::error(array('message' => $message, 'pod' => $_REQUEST['pod_name']));
+		OCP\JSON::error(array('data' => array('message'=>'Problem deleting job '.$_REQUEST['job_id'])));
 	}
 }
-elseif($_REQUEST['action']=='check_manifest'){
-	$data = $util->checkManifest($_REQUEST['yaml_file']);
-	OCP\JSON::success(array('data' => $data));
+elseif($_REQUEST['action']=='get_jobs') {
+	$jobs = $util->getJobs();
+	if(!empty($jobs)){
+		OCP\JSON::success('data' => $jobs);
+	}
+	else{
+		OCP\JSON::error(array('data' => array('message'=>'Problem deleting job '.$_REQUEST['job_id'])));
+	}
 }
-elseif($_REQUEST['action']=='get_containers') {
-	$data = $util->getContainers(OCP\User::getUser(),
-			empty($_REQUEST['pod_names'])?null:$_REQUEST['pod_names']);
-	OCP\JSON::success(array('data' => $data));
+elseif($_REQUEST['action']=='get_script'){
+	if(empty($_REQUEST['job_script'])){
+		OCP\JSON::error(array('data' => array('message'=>'No script file specified')));
+		exit;
+	}
+	$script = $util->getJobScript.trim($_REQUEST['job_script']);
+	if(!empty($script)){
+		OCP\JSON::success(array('data' => $script));
+	}
+	else{
+		OCP\JSON::error(array('data' => array('message'=>'Problem reading script '.$_REQUEST['job_script'])));
+	}
 }
 else{
 	OCP\JSON::error(array('message'=>'No action specified'));

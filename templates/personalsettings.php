@@ -10,9 +10,7 @@ $l = OC_L10N::get('batch');
 	<br />
 
 	<?php p($l->t("Script folder"));?>:
-
-	<input type="text" id="script_folder"
-	value="<?php p(isset($_['script_folder'])?$_['script_folder']:''); ?>" placeholder=""/>
+	<input type="text" id="script_folder" value="<?php p(isset($_['script_folder'])?$_['script_folder']:''); ?>" placeholder=""/>
 	<label class="batch_choose_script_folder btn btn-flat button"><?php p($l->t("Browse"));?></label>
 	<div id="script_folder" style="visibility:hidden;display:none;"></div>
 	<div class="script_folder_dialog" display="none">
@@ -23,6 +21,8 @@ $l = OC_L10N::get('batch');
 	<label id="batch_msg"></label>
 	<br />
 	<br />
+	<?php p($l->t("API URL"));?>:
+	<input type="text" id="api_url" value="<?php p(isset($_['api_url'])?$_['api_url']:''); ?>" placeholder=""/>
 	<?php p($l->t("Get default scripts"));?>:
 	<label id="get_default_batch_scripts" class="button"><?php p($l->t('Get'));?></label>
 	<label id="batch_scripts_msg"></label>

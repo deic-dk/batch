@@ -5,13 +5,14 @@ OCP\JSON::checkAppEnabled('batch');
 OCP\JSON::callCheck();
 
 $util = new OC_Batch_Util();
+$user = OCP\USER::getUser();
 
 if($_REQUEST['action']=='submit_job') {
 	if(empty($_POST['job_script'])){
 		OCP\JSON::error(array('data' => array('message'=>'No script file specified')));
 		exit;
 	}
-	$res = $util->submitJobScript($_POST['job_script']);
+	$res = $util->submitJobScript($_POST['job_script'], $user);
 	if(!empty($res)){
 		OCP\JSON::success();
 	}
@@ -24,7 +25,7 @@ elseif($_REQUEST['action']=='delete_job') {
 		OCP\JSON::error(array('data' => array('message'=>'No job specified')));
 		exit;
 	}
-	$res = $util->deleteJob($_REQUEST['job_id']);
+	$res = $util->deleteJob($_REQUEST['job_id'], $user);
 	if(!empty($res)){
 		OCP\JSON::success();
 	}
@@ -33,7 +34,7 @@ elseif($_REQUEST['action']=='delete_job') {
 	}
 }
 elseif($_REQUEST['action']=='get_jobs') {
-	$jobs = $util->getJobs();
+	$jobs = $util->getJobs($user);
 	if(!empty($jobs)){
 		OCP\JSON::success('data' => $jobs);
 	}
@@ -46,7 +47,7 @@ elseif($_REQUEST['action']=='get_script'){
 		OCP\JSON::error(array('data' => array('message'=>'No script file specified')));
 		exit;
 	}
-	$script = $util->getJobScript.trim($_REQUEST['job_script']);
+	$script = $util->getJobScript($_REQUEST['job_script'], $user);
 	if(!empty($script)){
 		OCP\JSON::success(array('data' => $script));
 	}

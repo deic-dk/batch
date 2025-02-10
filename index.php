@@ -20,6 +20,6 @@ OC_Util::addScript('files_markdown','marked');
 
 $tmpl = new OCP\Template('batch', 'main', 'user');
 $util = new OC_Batch_Util();
-$tmpl->assign('scripts', $util->getJobScripts());
+$tmpl->assign('scripts', $util->listJobScripts());
 $tmpl->printPage();
 

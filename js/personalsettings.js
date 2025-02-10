@@ -1,9 +1,13 @@
+function getApiUrl(){
+  return $('#api_url').val();
+}
+
 function submit_batch_form(){
 	$.ajax({
 		type:'POST',
 		url:OC.linkTo('batch','ajax/set_settings.php'),
 				dataType:'json',
-				data: {script_folder:  getScriptFolder()},
+				data: {script_folder:  getScriptFolder(), api_url: getApiUrl()},
 				async: false,
 				success: function(s){
 					if(s.length!=0 && s.status){

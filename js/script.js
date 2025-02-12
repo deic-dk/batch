@@ -68,11 +68,11 @@ function updateJobCount(){
 }
 
 //////////// begin core api functions /////////////
-function getJobs(callback){
+function listJobs(callback){
 	$.ajax({
 		url: OC.filePath('batch', 'ajax', 'actions.php'),
 		data: {
-			action: 'get_jobs',
+			action: 'list_jobs',
 			pod_names: ''
 		},
 		beforeSend: function(xhr){
@@ -106,12 +106,12 @@ function getJobs(callback){
 					OC.redirect('/');
 				}
 				else{
-					OC.dialogs.alert(t("batch", "get_jobs: Something went wrong..."), t("batch", "Error"));
+					OC.dialogs.alert(t("batch", "list_jobs: Something went wrong..."), t("batch", "Error"));
 				}
 			}
 		},
 		error:  function(jsondata){
-			OC.dialogs.alert(t("batch", "get_jobs: Something went wrong. "+jsondata), t("batch", "Error"));
+			OC.dialogs.alert(t("batch", "list_jobs: Something went wrong. "+jsondata), t("batch", "Error"));
 		},
 		complete: function(xhr){
 			ajaxCompleted(xhr);
@@ -133,20 +133,20 @@ function submitJob(script){
 		success: function(jsondata){
 			if(jsondata.status == 'success'){
 				if(jsondata.data.identifier){
-					getJobs();
+					listJobs();
 					// if a previous run_pod call has outstanding timeouts, clear them
 					$.submitJobTimeouts.forEach(function(timeout){
 						clearTimeout(timeout);
 					});
 					$.submitJobTimeouts = [];
 					$.submitJobTimeouts.push(setTimeout(function(){
-						getJobs();
+						listJobs();
 					}, 10000));
 					$.submitJobTimeouts.push(setTimeout(function(){
-						getJobs();
+						listJobs();
 					}, 30000));
 					$.submitJobTimeouts.push(setTimeout(function(){
-						getJobs();
+						listJobs();
 					}, 60000));
 				}
 				else{
@@ -171,12 +171,12 @@ function submitJob(script){
 	});
 }
 
-function deleteJob(job_id){
+function deleteJob(job_db_url){
 	$.ajax({
 		url: OC.filePath('batch', 'ajax', 'actions.php'),
 		data: {
 			action: "delete_job",
-			job_id: job_id
+			job_db_url: job_db_url
 		},
 		method: 'post',
 		beforeSend: function(xhr){
@@ -341,10 +341,10 @@ $(document).ready(function(){
 
 	$('#jobs_refresh').click(function(e){
 		$('table#jobstable tfoot.summary tr td span.info').remove();
-		getJobs();
+		listJobs();
 	});
 
-	getJobs(function(){
+	listJobs(function(){
 		if(typeof getGetParam !== 'undefined' && getGetParam('file') && getGetParam('job_sript')){
 			var job_script = decodeURIComponent(getGetParam('job_sript'));
 			$('#newjob').show();

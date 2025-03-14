@@ -24,7 +24,7 @@ function getExpandedRowElementView(name, items, urls){
 			// We're getting a file from https://batch/
 			proxyAttr = proxyAttr+"class='proxy' proxy='batch' ";
 		}
-		ret = ret + "<a "+proxyAttr+"href='"+localToGlobal(urls[i])+"'>"+item+"</a>";
+		ret = ret + "&nbsp;<a "+proxyAttr+"href='"+localToGlobal(urls[i])+"'>"+item+"</a>";
 		if(items[i]=="stdout" || items[i]=="stderr" || items[i]=="job" || items[i].endsWith(".sh")){
 			ret = ret +"<a title='Direct link' class='link' href='"+localToGlobal(urls[i])+"'>🔗</a>&nbsp;";
 		}
@@ -55,8 +55,8 @@ function updateTr(job, jobInfo, tr){
 	var inputFileNames = [];
 	var inputFileURLs = [];
 	var api_url = $('#app-content-batch').attr('apiUrl');
-	inputFileNames.push("job");
-	inputFileURLs.push(api_url+"gridfactory/jobs/"+job['identifier']+"/job");
+	//inputFileNames.push("job");
+	//inputFileURLs.push(api_url+"gridfactory/jobs/"+job['identifier']+"/job");
 	inputFileNames.push(...jobInfo['inputFileURLs'].split(" "));
 	inputFileURLs.push(...jobInfo['inputFileURLs'].split(" "));
 	var html = "<tr class='expanded-row' identifier='" + job['identifier'] + "'> <td colspan='5'>" +
@@ -182,7 +182,7 @@ function submitJob(job_template_text, input_file, group){
 		data: {
 			action: 'submit',
 			job_template_text: job_template_text,
-			input_files: files,
+			input_files: JSON.stringify(files),
 			group: group
 		},
 		method: 'post',
@@ -191,26 +191,21 @@ function submitJob(job_template_text, input_file, group){
 		},
 		success: function(jsondata){
 			if(jsondata.status == 'success'){
-				if(jsondata.data.identifier){
+				listJobs();
+				// if a previous run_job call has outstanding timeouts, clear them
+				$.submitJobTimeouts.forEach(function(timeout){
+					clearTimeout(timeout);
+				});
+				$.submitJobTimeouts = [];
+				$.submitJobTimeouts.push(setTimeout(function(){
 					listJobs();
-					// if a previous run_job call has outstanding timeouts, clear them
-					$.submitJobTimeouts.forEach(function(timeout){
-						clearTimeout(timeout);
-					});
-					$.submitJobTimeouts = [];
-					$.submitJobTimeouts.push(setTimeout(function(){
-						listJobs();
-					}, 10000));
-					$.submitJobTimeouts.push(setTimeout(function(){
-						listJobs();
-					}, 30000));
-					$.submitJobTimeouts.push(setTimeout(function(){
-						listJobs();
-					}, 60000));
-				}
-				else{
-					OC.msg.finishedAction('#batch_message',  {status: 'error', 	data: {message: t("batch", "submit_job: Something went wrong...")}});
-				}
+				}, 10000));
+				$.submitJobTimeouts.push(setTimeout(function(){
+					listJobs();
+				}, 30000));
+				$.submitJobTimeouts.push(setTimeout(function(){
+					listJobs();
+				}, 60000));
 			}
 			else if(jsondata.status == 'error'){
 				if(jsondata.data && jsondata.data.error && jsondata.data.error == 'authentication_error'){

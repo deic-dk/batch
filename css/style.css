@@ -340,6 +340,7 @@ label.batch_choose_input_file.button {
 
 #fileList a.proxy {
 	padding-right: 0;
+	margin-right: 12px;
 }
 
 #fileList a.link {

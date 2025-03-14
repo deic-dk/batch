@@ -1,5 +1,5 @@
 function setInputFile(file){
-  $('#batch_folder').val(file);
+  $('#batch_input_file').val(file);
 }
 
 $(document).ready(function(){

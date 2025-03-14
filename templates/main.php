@@ -48,7 +48,7 @@
 							<a class="btn btn-default btn-flat" href="#"><?php p($l->t("Save")); ?></a>
 						</div>
 						<div id="ok" class="btn-job" original-title="">
-							<a class="btn btn-default btn-flat" href="#"><?php p($l->t("Run")); ?></a>
+							<a class="btn btn-default btn-flat" href="#"><?php p($l->t("Submit")); ?></a>
 						</div>
 						<div id="cancel" class="btn-job" original-title="">
 							<a class="btn btn-default btn-flat" href="#"><?php p($l->t("Cancel")); ?></a>

@@ -1,25 +1,47 @@
 <?php
 
+OCP\JSON::checkAppEnabled('files_sharding');
+OCP\JSON::checkAppEnabled('chooser');
+
 class OC_Batch_Util {
-	OCP\JSON::checkAppEnabled('files_sharding');
-	OCP\JSON::checkAppEnabled('chooser');
+	
+	private $api_url;
+	private $user;
+	private $batchFolder;
+	private $certFile;
+	private $keyFile;
+	private $dn;
+	
+	function __construct($user){
+		$this->user = $user;
+		$this->api_url = \OCP\Config::getUserValue($this->user, 'batch', 'api_url', '');
+		$this->batchFolder = \OCP\Config::getUserValue($this->user, 'batch', 'batch_folder');
+		$this->certFile = \OC_Chooser::getSDCertLocation($this->user);
+		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
+		if(empty($this->certFile) || empty($this->keyFile)){
+			throw new \Exception("Missing certificate or key file.");
+		}
+		$this->dn = \OC_Chooser::getSDCertSubject($this->user);
+	}
 	
 	/**
 	 * Copy over scripts from lib/scripts to the folder chosen by the user in her settings
-	 * @param String $user
-	 * @param String $scriptDir
+	 * @param String $batchFolder
 	 */
-	public static function getScriptFiles($user, $scriptDir){
-		$scriptDirFullPath = \OC\Files\Filesystem::getLocalFile($scriptDir);
-		$defaultScriptsFolder = dirname(__FILE__).'/scripts';
-		\OCP\Util::writeLog('batch', 'Copying'.$defaultScriptsFolder.'-->'.$scriptDirFullPath, \OC_Log::WARN);
-		$files = array_diff(scandir($defaultScriptsFolder), array('.', '..'));
+	public function getTemplates(){
+		$myTemplatesFolderFullPath = \OC\Files\Filesystem::getLocalFile($this->batchFolder.'/job_templates');
+		if(!file_exists($myTemplatesFolderFullPath)){
+			mkdir($myTemplatesFolderFullPath);
+		}
+		$templatesFolder = dirname(__FILE__).'/job_templates';
+		\OCP\Util::writeLog('batch', 'Copying'.$templatesFolder.'-->'.$myTemplatesFolderFullPath, \OC_Log::WARN);
+		$files = array_diff(scandir($templatesFolder), array('.', '..'));
 		$success = true;
 		$newfiles = [];
 		foreach($files as $file){
 			if(substr($file, -3)=='.sh'){
-				$srcFileFullPath = $defaultScriptsFolder.'/'.$file;
-				$newfileFullPath = $scriptDirFullPath.'/'.$file;
+				$srcFileFullPath = $templatesFolder.'/'.$file;
+				$newfileFullPath = $myTemplatesFolderFullPath.'/'.$file;
 				$ok = copy($srcFileFullPath, $newfileFullPath);
 				if(!$ok){
 					$success = false;
@@ -30,7 +52,7 @@ class OC_Batch_Util {
 		}
 		if($success){
 			$view = \OC\Files\Filesystem::getView();
-			$absPath = $view->getAbsolutePath($scriptDir);
+			$absPath = $view->getAbsolutePath($this->batchFolder);
 			list($storage, $internalPath) = \OC\Files\Filesystem::resolvePath('/' . $absPath);
 			\OCP\Util::writeLog('batch', 'Internal path: '.$internalPath, \OC_Log::WARN);
 			if($storage){
@@ -42,38 +64,60 @@ class OC_Batch_Util {
 		}
 	}
 	/**
+	 * Creates the folder "output_files" inside the chosen work folder.
+	 */
+	public function createOutputFolder(){
+		$batch_folder = \OCP\Config::getUserValue($this->user, 'batch', 'batch_folder');
+		\OC\Files\Filesystem::mkdir($batch_folder."/output_files");
+	}
+	/**
 	 * Read the file $jobScript and return the text content.
 	 * @param String $jobScript
 	 */
-	public static function getJobScript($jobScript, $user){
-		$script_folder = \OCP\Config::getUserValue($user, 'batch', 'script_folder');
-		$filecontent = \OC\Files\Filesystem::file_get_contents($script_folder.'/'.$jobScript);
+	public static function getJobScript($jobScript){
+		$filecontent = \OC\Files\Filesystem::file_get_contents($jobScript);
 		return $filecontent;
 	}
 	/**
-	 * Return a list of filenames ending in ".sh" in the script folder.
+	 * Save the text content $jobScriptText into file $jobScript.
+	 * @param String $jobScript
+	 * @param String $jobScriptText
 	 */
-	public static function listJobScripts($user){
-		$script_folder = \OCP\Config::getUserValue($user, 'batch', 'script_folder');
-		$handle = \OC\Files\Filesystem::opendir($script_folder);
+	public static function saveJobScript($jobScript, $jobScriptText){
+		$status = false;
+		if(!empty($jobScriptText)){
+			$status = \OC\Files\Filesystem::file_put_contents($jobScript, $jobScriptText);
+		}
+		return $status;
+	}
+	/**
+	 * Return a list of filenames ending in ".sh" or ".py" in the script folder.
+	 */
+	public function listJobScripts(){
+		if(empty($this->batchFolder)){
+			\OCP\Util::writeLog('batch', 'Script folder not set.', \OC_Log::WARN);
+			return [];
+		}
+		$batchFolderFullPath = \OC\Files\Filesystem::getLocalFile($this->batchFolder);
+		$handle = opendir($batchFolderFullPath);
 		$scriptFiles = [];
-		while (false !== ($entry = \OC\Files\Filesystem::readdir($handle))) {
-			if ($entry != "." && $entry != ".." && substr($entry, -3)=='.sh') {
+		while (false !== ($entry = readdir($handle))) {
+			\OCP\Util::writeLog('batch', 'Reading '.serialize($entry), \OC_Log::WARN);
+			if(empty($entry)){
+				break;
+			}
+			if($entry != "." && $entry != ".." && (substr($entry, -3)=='.sh' || substr($entry, -3)=='.py')){
 				$scriptFiles[] = $entry;
 			}
 		}
 		return $scriptFiles;
 	}
-	private static function getContent($uri, $user){
-		$certFile = \OC_Chooser::getSDCertLocation($user);
-		$keyFile = \OC_Chooser::decryptSDKey($user);
-		if(empty($certFile) || empty($keyFile)){
-			throw new \Exception("Missing certificate or key file.");
-		}
+	public function getContent($uri){
+		\OCP\Util::writeLog('batch', 'Getting URL '.$uri, \OC_Log::WARN);
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_CAINFO, \OCA\FilesSharding\Lib::$wsCACert);
-		curl_setopt($ch, CURLOPT_SSLCERT, $certFile);
-		curl_setopt($ch, CURLOPT_SSLKEY, $keyFile);
+		curl_setopt($ch, CURLOPT_SSLCERT, $this->certFile);
+		curl_setopt($ch, CURLOPT_SSLKEY, $this->keyFile);
 		curl_setopt($ch, CURLOPT_URL, $uri);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'ScienceData/cURL');
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -82,16 +126,11 @@ class OC_Batch_Util {
 		curl_close($ch);
 		return $data;
 	}
-	private static function mkCol($url, $user){
-		$certFile = \OC_Chooser::getSDCertLocation($user);
-		$keyFile = \OC_Chooser::decryptSDKey($user);
-		if(empty($certFile) || empty($keyFile)){
-			throw new \Exception("Missing certificate or key file.");
-		}
+	private function mkCol($url){
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_CAINFO, \OCA\FilesSharding\Lib::$wsCACert);
-		curl_setopt($ch, CURLOPT_SSLCERT, $certFile);
-		curl_setopt($ch, CURLOPT_SSLKEY, $keyFile);
+		curl_setopt($ch, CURLOPT_SSLCERT, $this->certFile);
+		curl_setopt($ch, CURLOPT_SSLKEY, $this->keyFile);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'MKCOL');
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'ScienceData/cURL');
@@ -99,77 +138,84 @@ class OC_Batch_Util {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		$data = curl_exec($ch);
 		curl_close($ch);
-		unlink($keyFile); // Clean up temporary unencrypted key file
 		return $data;
 	}
-	private static function delete($url, $user){
-		$certFile = \OC_Chooser::getSDCertLocation($user);
-		$keyFile = \OC_Chooser::decryptSDKey($user);
-		if(empty($certFile) || empty($keyFile)){
-			throw new \Exception("Missing certificate or key file.");
-		}
+	private function delete($url){
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_CAINFO, \OCA\FilesSharding\Lib::$wsCACert);
-		curl_setopt($ch, CURLOPT_SSLCERT, $certFile);
-		curl_setopt($ch, CURLOPT_SSLKEY, $keyFile);
+		curl_setopt($ch, CURLOPT_SSLCERT, $this->certFile);
+		curl_setopt($ch, CURLOPT_SSLKEY, $this->keyFile);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'ScienceData/cURL');
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		$data = curl_exec($ch);
+		$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
-		unlink($keyFile); // Clean up temporary unencrypted key file
-		return $data;
+		return $httpcode;
 	}
-	private static function uploadFile($file, $url, $user){
+	private function put($url, $str){
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_CAINFO, \OCA\FilesSharding\Lib::$wsCACert);
+		curl_setopt($ch, CURLOPT_SSLCERT, $this->certFile);
+		curl_setopt($ch, CURLOPT_SSLKEY, $this->keyFile);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_USERAGENT, 'ScienceData/cURL');
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $str);
+		$ret = curl_exec($ch);
+		curl_close($ch);
+		return $ret;
+	}
+	private function uploadFile($file, $url){
 		$file = fopen($file, 'r');
 		$size = filesize($file);
 		$data = fread($file, $size);
-		return self::upload($data, $url, $user);
+		return $this->upload($data, $url);
 	}
-	private static function upload($data, $url, $user){
-		$filename = basename(parse_url($url, PHP_URL_PATH));
-		$certFile = \OC_Chooser::getSDCertLocation($user);
-		$keyFile = \OC_Chooser::decryptSDKey($user);
-		if(empty($certFile) || empty($keyFile)){
-			throw new \Exception("Missing certificate or key file.");
-		}
-		
-		$requestBody = '';
+	private function upload($data, $url){
+		//$filename = basename(parse_url($url, PHP_URL_PATH));
+		/*$requestBody = '';
 		$separator = '-----'.md5(microtime()).'-----';
 		$requestBody .= "--$separator\r\n" . "Content-Disposition: form-data; name=\"$filename\"; filename=\"$filename\"\r\n" . "Content-Length: ".strlen($data)."\r\n" . "Content-Transfer-Encoding: binary\r\n" . "\r\n" . "$data\r\n";
 		// Terminate the body
-		$requestBody .= "--$separator--";
+		$requestBody .= "--$separator--";*/
 		$ch = curl_init($url);
 		
 		// This is necessary as cURL will ignore the CURLOUT_POSTFIELDS if we use the built-in PUT method
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		//curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
+		/*curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 				'Content-Type: multipart/form-data; boundary="'.$separator.'"',
-		));
+		));*/
 		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
 		
 		curl_setopt($ch, CURLOPT_CAINFO, \OCA\FilesSharding\Lib::$wsCACert);
-		curl_setopt($ch, CURLOPT_SSLCERT, $certFile);
-		curl_setopt($ch, CURLOPT_SSLKEY, $keyFile);
+		curl_setopt($ch, CURLOPT_SSLCERT, $this->certFile);
+		curl_setopt($ch, CURLOPT_SSLKEY, $this->keyFile);
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'ScienceData/cURL');
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		$response = curl_exec($ch);
 		curl_close($ch);
-		unlink($keyFile); // Clean up temporary unencrypted key file
 		return $response;
 	}
-	public static function getJobs($user){
-		$api_url = \OCP\Config::getUserValue($user, 'batch', 'api_url', '');
+//////////////////////////
+// API functions
+/////////////////////////
+	public function getJobs(){
+		$api_url = \OCP\Config::getUserValue($this->user, 'batch', 'api_url', '');
 		if(empty($api_url)){
+			\OCP\Util::writeLog('batch', 'API URL not set', \OC_Log::ERROR);
 			return false;
 		}
 		$jobs = [];
-		$text = self::getContent($api_url."/jobs", $user);
+		$text = $this->getContent($api_url."db/jobs/");
 		$lines = explode("\n", $text);
 		$firstLine = true;
 		foreach($lines as $line){
@@ -187,20 +233,76 @@ class OC_Batch_Util {
 			}
 			$jobs[] = $job;
 		}
+		\OCP\Util::writeLog('batch', 'Returning jobs '.serialize($jobs), \OC_Log::WARN);
 		return $jobs;
 	}
-	public static function submitJob($jobScriptText, $user){
-		$api_url = \OCP\Config::getUserValue($user, 'batch', 'api_url', '');
-		if(empty($api_url)){
+	public function getJobInfo($identifier){
+		if(empty($this->api_url)){
+			\OCP\Util::writeLog('batch', 'API URL not set', \OC_Log::ERROR);
 			return false;
 		}
-		$job_id = $api_url."/jobs/".uniqid();
-		self::mkCol($job_id, $user);
-		self::upload($jobScriptText, $job_id."/job", $user);
+		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
+		$job = [];
+		$text = $this->getContent($this->api_url."db/jobs/".$identifier."/");
+		$lines = explode("\n", $text);
+		foreach($lines as $line){
+			$keyVal = explode(": ", $line);
+			$job[$keyVal[0]] = $keyVal[1];
+		}
+		unlink($this->keyFile); // Clean up temporary unencrypted key file
+		\OCP\Util::writeLog('batch', 'Returning job '.serialize($job), \OC_Log::WARN);
+		return $job;
+	}
+	public function submitJob($jobScript, $jobScriptText, $inputFile){
+		if(empty($this->api_url)){
+			return false;
+		}
+		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
+		if(empty($jobScriptText)){
+			$jobScriptText = $this->getJobScript($jobScript);
+		}
+		$job_id = $this->api_url."gridfactory/jobs/".uniqid();
+		$homeServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($this->user, true);
+		$homeServerPrivateUrl = \OCA\FilesSharding\Lib::internalToPrivate($homeServerInternalUrl);
+		$inputFileUrl = $homeServerPrivateUrl.'/grid'.$inputFile;
+		$inputFilename = basename($inputFile);
+		$inputFileBasename = preg_replace('|\.[^\.]+$|', '', $inputFilename);
+		$batch_folder = \OCP\Config::getUserValue($this->user, 'batch', 'batch_folder');
+		$batch_folder_url = $homeServerPrivateUrl.'/files'.$batch_folder;
+		# Substitute in job script
+		$pos = strpos($jobScriptText, '#GRIDFACTORY');
+		$jobScriptText = substr_replace($jobScriptText, "#GRIDFACTORY -u " . $job_id . "\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));
+		$jobScriptText = str_replace('IN_FILE_URL', $inputFileUrl, $jobScriptText);
+		$jobScriptText = str_replace('IN_FILENAME', $inputFileBasename, $jobScriptText);
+		$jobScriptText = str_replace('IN_FILE', $inputFilename, $jobScriptText);
+		$jobScriptText = str_replace('WORK_FOLDER_URL', $batch_folder_url, $jobScriptText);
+		$jobScriptText = str_replace('SSL_DN', $this->dn, $jobScriptText);
+		\OCP\Util::writeLog('batch', 'Creating job dir '.$job_id, \OC_Log::WARN);
+		$this->mkCol($job_id);
+		\OCP\Util::writeLog('batch', 'Uploading job '.$job_id."/job", \OC_Log::WARN);
+		$this->upload($jobScriptText, $job_id."/job");
+		unlink($this->keyFile); // Clean up temporary unencrypted key file
 		return $job_id;
 	}
-	public static function deleteJob($jobDbUrl, $user){
-		return self::delete($jobDbUrl, $user);
+	public function requestJobOutput($identifier){
+		if(empty($this->api_url)){
+			\OCP\Util::writeLog('batch', 'API URL not set', \OC_Log::ERROR);
+			return false;
+		}
+		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
+		$ret = $this->put($this->api_url."db/jobs/".$identifier, 'csStatus: running:requestOutput');
+		unlink($this->keyFile); // Clean up temporary unencrypted key file
+		return $ret;
+	}
+	public function deleteJob($identifier){
+		if(empty($this->api_url)){
+			return false;
+		}
+		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
+		$jobUrl = $this->api_url . 'gridfactory/jobs/' . $identifier;
+		$ret = $this->delete($jobUrl);
+		unlink($this->keyFile); // Clean up temporary unencrypted key file
+		return $ret;
 	}
 }
 

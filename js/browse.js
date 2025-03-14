@@ -1,12 +1,12 @@
-function setScriptFolder(folder){
-  $('#script_folder').val(folder);
+function setBatchFolder(folder){
+  $('#batch_folder').val(folder);
 	if(folder){
 		enableGetDefaultBatchScripts(true);
 	}
 }
 
-function getScriptFolder(){
-  return $('#script_folder').val();
+function getBatchFolder(){
+  return $('#batch_folder').val();
 }
 
 function stripTrailingSlash(str) {
@@ -28,17 +28,17 @@ function stripLeadingSlash(str) {
 
 $(document).ready(function(){
 
-	var choose_script_folder_dialog;
+	var choose_batch_folder_dialog;
 	var buttons = {};
 	buttons[t("batch", "Choose")] = function() {
-		folder = stripTrailingSlash($('#script_folder').text());
-		setScriptFolder(folder);
-		choose_script_folder_dialog.dialog("close");
+		folder = stripTrailingSlash($('#batch_folder').val());
+		setBatchFolder(folder);
+		choose_batch_folder_dialog.dialog("close");
  	};
  	buttons[t("batch", "Cancel")] = function() {
- 		choose_script_folder_dialog.dialog("close");
+ 		choose_batch_folder_dialog.dialog("close");
 	};
-	choose_script_folder_dialog = $("div.script_folder_dialog").dialog({//create dialog, but keep it closed
+	choose_batch_folder_dialog = $("div.batch_folder_dialog").dialog({//create dialog, but keep it closed
    title: t("batch", "Choose folder"),
     autoOpen: false,
     height: 440,
@@ -51,17 +51,17 @@ $(document).ready(function(){
     buttons: buttons
   });
 
-  $('.batch_choose_script_folder').live('click', function(){
-  	choose_script_folder_dialog.dialog('open');
-  	choose_script_folder_dialog.show();
+  $('.batch_choose_batch_folder').live('click', function(){
+  	choose_batch_folder_dialog.dialog('open');
+  	choose_batch_folder_dialog.show();
   	$('.ui-dialog-buttonpane').show();
   	$('.ui-dialog-titlebar').show();
-	folder = stripLeadingSlash(getScriptFolder());
+	folder = stripLeadingSlash(getBatchFolder());
 	group = $('#user_groups_move_select').val();
 	if(group=='home'){
 		group = '';
 	}
-	$('.script_folder_dialog div.loadFolderTree').fileTree({
+	$('.batch_folder_dialog div.loadFolderTree').fileTree({
 	  //root: '/',
 	  script: '../../apps/chooser/jqueryFileTree.php',
 	  multiFolder: false,
@@ -73,13 +73,13 @@ $(document).ready(function(){
 	},
 	// single-click
 	function(file) {
-	  $('#script_folder').text(file);
+	  $('#batch_folder').val(file);
 	},
 	// double-click
 	function(file) {
 	  if(file.indexOf("/", file.length-1)!=-1){// folder double-clicked
-	  	setScriptFolder(file);
-	  	choose_script_folder_dialog.dialog("close");
+	  	setBatchFolder(file);
+	  	choose_batch_folder_dialog.dialog("close");
 	  }
 	});
   });

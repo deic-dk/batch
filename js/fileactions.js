@@ -1,4 +1,4 @@
-function keks(event){
+function batchDrop(event){
 	// submit multiple files
 	event.stopPropagation();
 	if($('#batchDrop').length>0){
@@ -10,39 +10,51 @@ function keks(event){
 	for( var i=0;i<selectedFiles.length;++i){
 		files.push(selectedFiles[i].name);
 	}
-	batchCreateUI(false, files);
+	//batchCreateUI(files);
+	getJobTemplatesFolder(files, batchCreateUI);
 	return false;
 };
 
-function addSelectedAction(){
+function addSelectedBatchAction(){
 	$('#headerName .selectedActions').each(function(){
 		if(!$(this).find('.batch').length){
-			$('<a class="move btn btn-xs btn-default" href=""><img src="'+OC.imagePath('batch', 'stack.svg')+'" />'+t('batch',' Batch process')+'</a>').prependTo($(this));
-			$(this).find('.batch').click(keks)
+			$(this).prepend('<a class="batch btn btn-xs btn-default" href=""><img src="'+OC.imagePath('batch', 'stack.svg')+'" />'+t('batch',' Process')+'</a>&nbsp;');
+			$(this).find('.batch').click(batchDrop)
 		}
 	});
 }
 
-function batchCreateUI(files){
-	var html = '<div id="mvDrop" class="mvUI">';
-	html += '<form action="#" id="mvForm"><div><input type="checkbox" id="dirCopy"';
-	if(!permUpdate || copy) html += ' checked';
-	if(!permUpdate) html += ' disabled';
-	html += '></input><label for="dirCopy">'+t('files_mv','Copy')+'</label></div>';
-	html += '<select id=user_groups_move_select><option value="home">'+t('files_mv', 'Home')+'</option></select>';
-	html += '<input id="dirList" placeholder="'+t('files_mv','Destination directory')+'"><br>';
+function getJobTemplatesFolder(files, callback){
+	$.ajax(OC.linkTo('batch', 'ajax/actions.php'), {
+		data: {
+			action: 'get_job_templates_folder'
+		},
+		type: "GET",
+		dataType: 'json',
+		success: function(data) {
+			callback(files, data.data.job_templates_folder);
+		}
+	});
+}
+
+function batchCreateUI(files, jobTemplatesFolder){
+	var html = '<div id="batchDrop" class="batchUI">';
+	html += '<form action="#" id="batchForm">';
+	//html += '<select id=user_groups_move_select><option value="home">'+t('batch', 'Home')+'</option></select>';
+	html += '<input id="fileList" placeholder="'+t('batch','Job template')+'"><br>';
+	// Files to be processed
 	html += '<input type="hidden" id="dirFiles" value="'+encodeURIComponent(JSON.stringify(files))+'" />';
-	html += '<input type="submit" id="dirListSend" value="'+t('files_mv','Move')+'" />';
+	html += '<input type="submit" id="fileListSend" value="'+t('batch','Submit')+'" />';
 	html += '<strong id="mvWarning"></strong></form>';
 	html += '</div>';
-	$(html).addClass('mv').appendTo('.viewcontainer:not(.hidden) #headerName .selectedActions');
-	$('#dirList').focus(function(){
-		$('#dirList').autocomplete("search","");
+	$(html).addClass('batch').appendTo('.viewcontainer:not(.hidden) #headerName .selectedActions');
+	$('#fileList').focus(function(){
+		$('#fileList').autocomplete("search","");
 	});
 	// get autocompletion names
 
-	$('#dirList').autocomplete({minLength:0,
-		appendTo: '#mvForm',
+	$('#fileList').autocomplete({minLength:0,
+		appendTo: '#batchForm',
 		open: function() {
 			$("ul.ui-menu").width($(this).innerWidth());
 			$("ul.ui-menu").css('max-height', '178px');
@@ -52,44 +64,92 @@ function batchCreateUI(files){
 			$("ul.ui-menu").css('scrollbar-color',  '#747474 #e0e0e0');
 		},
 		source: function(request, response) {
-			var selectedGroup = $('.viewcontainer:not(.hidden) #user_groups_move_select').val();
-			if(selectedGroup=='home' && $('.viewcontainer:not(.hidden) #user_groups_move_select option:selected').text()==t('files_mv', 'Home')){
-				selectedGroup = '';
-			}
 			$.getJSON(
-				//OC.filePath('files_mv','ajax', 'autocompletedir.php'),
-				OC.webroot+'/themes/deic_theme_oc7/apps/files_mv/ajax/autocompletedir.php',
+				OC.filePath('batch','ajax', 'autocompletescriptfiles.php'),
 				{
-					files: JSON.stringify(files),
-					dir: $('.viewcontainer:not(.hidden) #dir').val(),
-					StartDir: $('#dirList').val(), // using current input to allow access to more than n levels depth,
+					dir: jobTemplatesFolder,
+					StartDir: jobTemplatesFolder, // using current input to allow access to more than n levels depth,
 					//StartDir: $('.viewcontainer:not(.hidden) #dir').val(),
-					group: selectedGroup
 					},
-					function(dir){
-						var group = '';
-						if(typeof OCA.Files.App.fileList.getGroup !== 'undefined'){
-							group = OCA.Files.App.fileList.getGroup();
-							if(group==null){
-								group = '';
-							}
-						}
-						//alert(selectedGroup+'!='+group+'-->'+dir.toSource());
-						if(selectedGroup!=group && $.inArray('/', dir)==-1){
-							dir.unshift('/');
-						}
-						$('#dirList').autocomplete('option','autoFocus', true);
-						response(dir);
+					function(scriptFile){
+						$('#fileList').autocomplete('option','autoFocus', true);
+						response(scriptFile);
 				}
 			);
 		}
 	});
-	$('#dirList').focus();
+	$('#fileList').focus();
 	}
 
 $(document).ready(function() {
 	if(/(public)\.php/i.exec(window.location.href)!=null) return; // escape when the requested file is public.php
 
-	addSelectedAction();
+	addSelectedBatchAction();
 	
+	$('#batchForm').live('submit', function(e){
+		var tr = $(e.target).closest('tr');
+		var group = '';
+		if(typeof OCA.Files.App.fileList.getGroup !== 'undefined'){
+			group = OCA.Files.App.fileList.getGroup();
+		}
+		var script = $('.viewcontainer:not(.hidden) #fileList').val();
+		var selectedFiles = FileList.getSelectedFiles();
+		var files = [];
+		var dir = FileList.getCurrentDirectory();
+		for( var i=0;i<selectedFiles.length;++i){
+			if(selectedFiles[i].mimetype!='httpd/unix-directory'){
+				files.push(dir+'/'+selectedFiles[i].name);
+			}
+		}
+		var dir  = $('.viewcontainer:not(.hidden) #dir').val();
+		if(group){
+			var re = new RegExp( "^/*"+group+"/");
+			dir = dir.replace(re,"/");
+		}
+		var srcId = tr.attr('data-id');
+		var srcOwner = tr.attr('data-share-owner-uid');
+		var dirId = getParam($('.crumb.last a').attr('href'), 'id');
+		if(!$('.viewcontainer:not(.hidden) .batch-message').length){
+			$('<div class="msg batch-message"><span class="msg wait"></span></div>').insertAfter('.viewcontainer:not(.hidden) #controls');
+		}
+		OC.msg.startAction('.viewcontainer:not(.hidden) .batch-message span', t("batch", "Submitting - please wait..."));
+		$.ajax({
+			type: 'POST',
+			url: OC.linkTo('batch','ajax/actions.php'),
+			cache: false,
+			data: {action: 'submit',
+									job_template: script,
+									dir: dir,
+									input_files: JSON.stringify(files),
+									group: group,
+									id: srcId,
+									owner: srcOwner,
+									parent_id: dirId
+			},
+			success: function(data){
+				if(data.status=="error"){
+					OC.msg.finishedAction('.viewcontainer:not(.hidden) .batch-message span',  {status: 'error',
+						data: {message: t("batch", "Error submitting job(s). ")+(data.message?data.message:'')}});
+				}
+				else{
+					OC.msg.finishedAction('.viewcontainer:not(.hidden) .batch-message span',  {status: 'success',
+						data: {message: t("batch", "Finished submitting.")}});
+				}
+			},
+			error: function(data){
+				OC.Notification.show("Unexpected error");
+			}
+		});
+		$('#fileList').autocomplete("close");
+		$('#batchDrop').detach();
+		return false;
+	});
+	
+	$(this).click(function(event){
+		if( (!($(event.target).hasClass('ui-corner-all')) && $(event.target).parents().index($('.ui-menu'))==-1) &&
+			(!($(event.target).hasClass('batchUI')) && $(event.target).parents().index($('#batchDrop'))==-1)){
+			$('#batchDrop').detach();
+		}
+	});
+
 });

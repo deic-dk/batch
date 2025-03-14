@@ -11,8 +11,9 @@ li {
 }
 
 .spanpanel {
-	margin-left: 1.5%;
+	margin-left: 12px;
 	margin-right: 16px;
+	white-space: nowrap;
 }
 
 .jobname {
@@ -30,6 +31,7 @@ li {
 	/*	height:15em; */
 	display: none;
 	user-select: text;
+	min-width:856px!important;
 }
 
 .apanel pre {
@@ -93,7 +95,7 @@ li {
 	margin-top: 10px;
 	margin-left: 15px;
 	position: relative;
-	/*width: 255px;*/
+	width: 368px;
 }
 
 .newjobform {
@@ -163,6 +165,7 @@ li {
 
 #newjob {
 	padding-bottom: 6px;
+	padding-top: 8px;
 }
 
 #jobstable .summary .info {
@@ -236,8 +239,8 @@ fieldset#batchsSettings table tbody tr td {
 	text-decoration: underline;
 }
 
-#jobstable .expanded-row {
-	background: #ffffff;
+table#jobstable tbody tr.expanded-row:hover {
+	background: none;
 }
 
 #jobstable .expanded-column-name {
@@ -268,6 +271,127 @@ fieldset#batchsSettings table tbody tr td {
 	display: inline-block;
 	vertical-align: bottom;
 	
+}
+
+#job_script_text {
+	white-space: pre-line;
+	height: 280px;
+	width: calc(100% - 11px);
+}
+
+#script_container {
+	margin-top: 24px;
+	margin-left: 27px;
+}
+
+#batch_in_out_files {
+	margin-left: 12px;
+	margin-top: 12px;
+}
+
+#batch_input_file {
+	width: 374px;
+}
+
+#batch_output_folder {
+  width: 342px;
+}
+
+#batch_output_filename {
+  width: 212px;
+}
+
+
+::before, ::after {
+  -webkit-box-sizing: border-box;
+
+  -moz-box-sizing: border-box;
+
+  box-sizing: border-box;
+
+}
+::before, ::after {
+  box-sizing: border-box;
+
+}
+::before, ::after {
+  box-sizing: border-box;
+
+}
+::before, ::after {
+  box-sizing: border-box;
+
+}
+::before, ::after {
+  box-sizing: border-box;
+
+}
+::before, ::after {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+label.batch_choose_input_file.button {
+	padding: 10px!important;
+	position: relative;
+	bottom: 4px;
+}
+
+#fileList a.proxy {
+	padding-right: 0;
+}
+
+#fileList a.link {
+  font-size: 12px;
+}
+
+#textLoad {
+	display: none;
+}
+
+.oc-dialog p {
+	white-space: pre-wrap;       /* css-3 */
+	white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+	white-space: -pre-wrap;      /* Opera 4-6 */
+	white-space: -o-pre-wrap;    /* Opera 7 */
+	word-wrap: break-word;
+	background: #f4f4f4;
+	color: #666;
+	overflow: auto;
+	max-height: 56vh;
+	max-width: 90vw;
+  padding: 12px;
+}
+
+.oc-dialog p span.ui-icon {
+	display: none;
+}
+
+.oc-dialog {
+	top: 100px!important;
+}
+.oc-dialog .oc-dialog-title{
+  margin-top: 0px;
+  margin-bottom: 16px;
+}
+
+.oc-dialog .oc-dialog-content {
+  height: unset!important;
+}
+
+#fileList .jobselect {
+	margin-bottom: 3px;
+}
+
+#delete_jobs {
+	font-size: 18px;
+	padding: 6px 0px 4px 8px;
+}
+
+.deleteJobs {
+	float: right;
+	margin-right: 21px;
 }
 
 

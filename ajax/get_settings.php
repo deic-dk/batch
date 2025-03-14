@@ -2,8 +2,10 @@
 
 
 $user = OCP\USER::getUser();
-$script_folder = \OCP\Config::getUserValue($user, 'batch', 'script_folder');
+$batch_folder = \OCP\Config::getUserValue($user, 'batch', 'batch_folder');
+$api_url = \OCP\Config::getUserValue($user, 'batch', 'api_url');
 
 OCP\JSON::success(array(
-		'script_folder' => $script_folder
+		'batch_folder' => $batch_folder,
+		'api_url' => $api_url
 ));

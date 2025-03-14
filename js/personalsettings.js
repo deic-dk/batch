@@ -7,7 +7,7 @@ function submit_batch_form(){
 		type:'POST',
 		url:OC.linkTo('batch','ajax/set_settings.php'),
 				dataType:'json',
-				data: {script_folder:  getScriptFolder(), api_url: getApiUrl()},
+				data: {batch_folder:  getBatchFolder(), api_url: getApiUrl()},
 				async: false,
 				success: function(s){
 					if(s.length!=0 && s.status){
@@ -23,19 +23,19 @@ function submit_batch_form(){
 	});
 }
 
-function get_default_scripts(){
+function get_job_templates(){
 	$.ajax({
 		type:'GET',
-		url:OC.linkTo('batch','ajax/get_default_scripts.php'),
+		url:OC.linkTo('batch','ajax/actions.php'),
 				dataType:'json',
-				data: {},
+				data: {action: 'copy_over_job_templates'},
 				async: false,
 				success: function(s){
 					if(s.length!=0 && s.status){
 						OC.msg.finishedSaving('#batch_scripts_msg', {status: 'success', data: {message:  	t('batch', s.status)}});
 					}
 					else{
-						OC.msg.finishedSaving('#batch_scripts_msg', {status: 'success', data: {message:  	t('batch', "Scripts copied to "+getScriptFolder())}});
+						OC.msg.finishedSaving('#batch_scripts_msg', {status: 'success', data: {message:  	t('batch', "Scripts copied to "+getBatchFolder())}});
 					}
 				},
 				error:function(s){
@@ -89,26 +89,26 @@ function batchInfo(){
 
 function enableGetDefaultBatchScripts(enabled){
 	if(enabled){
-		$('#get_default_batch_scripts').css('cursor', 'pointer');
-		$('#get_default_batch_scripts').removeAttr('disabled');
+		$('#get_job_templates').css('cursor', 'pointer');
+		$('#get_job_templates').removeAttr('disabled');
 	}
 	else{
-		$('#get_default_batch_scripts').attr('disabled', 'disabled');
-		$('#get_default_batch_scripts').css('cursor', 'default');
+		$('#get_job_templates').attr('disabled', 'disabled');
+		$('#get_job_templates').css('cursor', 'default');
 	}
 }
 
 $(document).ready(function(){
 	$("#batch_settings_submit").bind('click', function(){
-		enableGetDefaultBatchScripts( getScriptFolder());
+		enableGetDefaultBatchScripts(getBatchFolder());
 		submit_batch_form();
 	});
-	if(!getScriptFolder()){
+	if(!getBatchFolder()){
 		enableGetDefaultBatchScripts(false);
 	}
-	$("#get_default_batch_scripts").bind('click', function(){
+	$("#get_job_templates").bind('click', function(){
 		if(!$(this).attr('disabled')){
-			get_default_scripts();
+			get_job_templates();
 		}
 	});
 	$("#batch-info").click(function (ev) {

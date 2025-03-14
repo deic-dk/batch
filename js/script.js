@@ -3,59 +3,111 @@ function getRowElementPlain(name, value){
 	return "\n <td>\n  <div column='" + name + "'>\n   <span>" + value + "</span>\n  </div>\n </td>";
 }
 
-function getRowElementView(name, job){
-	if(job['status'].includes("Running")){
-		if(job['dbUrl'].length){
-			return "\n <td>\n  <div column='" + name + "'>\n   <span><a href='" + job['dbUrl'] +
-				"'>"+ job['dbUrl']+"</a></span>\n  </div>\n </td>";
-		}
-		else{
-			return getRowElementPlain(name, "none");
-		}
-	}
-	return getRowElementPlain(name, "wait");
+function getRowElementSelector(identifier){
+	return "\n <td>\n  <div column='" + name + "'>\n   <input identifier='"+identifier+"' type='checkbox' class='fileselect jobselect'>\n  </div>\n </td>";
 }
 
+function getExpandedRowElementView(name, items, urls){
+	var ret = "\n<tr><td  class='expanded-column-name'><span>"+name+"</span></td><td  class='expanded-column-value'><span>";
+	var item;
+	var proxyAttr;
+	var re = new RegExp( "https://"+window.location.host+".*");
+	for(var i=0; i<items.length; ++i){
+		item = items[i].replace(/^.*\/([^\/]+)$/, '$1');
+		proxyAttr = "filename='"+item+"' ";
+		if(urls[i].match(re)){
+			// We're getting a file from our own files on this silo
+			proxyAttr = proxyAttr+"class='proxy' proxy='files' ";
+		}
+		else if(!urls[i].match(/https:\/\/[^\.\/]+\.[^\.\/]+.*/) || items[i]=="job"){
+			// We're getting a file from https://batch/
+			proxyAttr = proxyAttr+"class='proxy' proxy='batch' ";
+		}
+		ret = ret + "<a "+proxyAttr+"href='"+localToGlobal(urls[i])+"'>"+item+"</a>";
+		if(items[i]=="stdout" || items[i]=="stderr" || items[i]=="job" || items[i].endsWith(".sh")){
+			ret = ret +"<a title='Direct link' class='link' href='"+localToGlobal(urls[i])+"'>🔗</a>&nbsp;";
+		}
+	}
+	ret = ret + "</span></td></tr>";
+	return ret;
+}
+
+// E.g. https://batch.sciencedata.dk/db/jobs/78c06e05-fa1c-11ef-95b0-ab51157ffb1b
+//
 // identifier name csStatus userInfo inputFileURLs outFileMapping providerInfo stdoutDest stderrDest createdlastModified outTmp errTmp jobID metaData host runningSeconds ramMB executable executables opSys runtimeEnvironments allowedVOs virtualize dbUrl
 
-function getExpandedTable(job){
-	var str = "\n <tr hidden class='expanded-row' identifier='" + job['identifier'] + "'> <td colspan='5'>" +
-		"\n<table id='expanded-" + job['identifier'] + "' class='panel expanded-table'>" +
-		"\n <tr><td class='expanded-column-name'>identifier:</td> <td class='expanded-column-value'><span>" + job['identifier'] + "</span></td></tr>" +
-		"\n <tr><td class='expanded-column-name'>executable:</td> <td class='expanded-column-value'><span>" + job['executable'] + "</span></td></tr>" +
-		"\n <tr><td class='expanded-column-name'>host:</td> <td class='expanded-column-value'><span>" + job['host'] + "</span></td></tr>" +
-		"\n <tr><td class='expanded-column-name'>userInfo:</td> <td class='expanded-column-value'><span>" + job['userInfo'] + "</span></td></tr>" +
-		"\n <tr><td class='expanded-column-name'>providerInfo:</td> <td class='expanded-column-value'><span>" + job['providerInfo'] + "</span></td></tr>" +
-		"\n <tr><td class='expanded-column-name'>runningSeconds:</td> <td class='expanded-column-value'><span>" + job['runningSeconds'] + "</span></td></tr>" +
-		"\n</table>" +
-		"\n </td> </tr>";
-	return str;
+function setExpandedTable(job, tr){
+	var identifier = job['identifier'].replace(/^.*\/([^\/]+)$/, '$1');
+	getJobInfo(identifier, job, tr, updateTr);
 }
 
-function formatStatusRunning(status, seconds){
-	if(status.includes("Running")){
-		try{
-			var runningTimeStr = new Date(seconds * 1000).toISOString().slice(11, 19);
-			return "Running: ".concat(runningTimeStr);
-		}
-		catch(error){
-			console.log(error);
-		}
+function localToGlobal(url){
+	if(url.match(/https:\/\/[^\.\/]+\.[^\.\/]+.*/)){
+		return url;
 	}
-	return status;
+	var api_url = $('#app-content-batch').attr('apiUrl');
+	var local_api_host = api_url.replace(/^https:\/\/([^\/\.]+[\.\/].*)/, '$1');
+	return url.replace(/^https:\/\/[^\/\.]+\/*/, api_url);
+}
+
+function updateTr(job, jobInfo, tr){
+	var inputFileNames = [];
+	var inputFileURLs = [];
+	var api_url = $('#app-content-batch').attr('apiUrl');
+	inputFileNames.push("job");
+	inputFileURLs.push(api_url+"gridfactory/jobs/"+job['identifier']+"/job");
+	inputFileNames.push(...jobInfo['inputFileURLs'].split(" "));
+	inputFileURLs.push(...jobInfo['inputFileURLs'].split(" "));
+	var html = "<tr class='expanded-row' identifier='" + job['identifier'] + "'> <td colspan='5'>" +
+	"\n<table id='expanded-" + job['identifier'] + "' class='panel expanded-table'>" +
+	"\n <tr><td class='expanded-column-name'>created:</td> <td class='expanded-column-value'><span>" +  job['created'] + "</span></td></tr>" +
+	"\n <tr><td class='expanded-column-name'>lastModified:</td> <td class='expanded-column-value'><span>" + jobInfo['lastModified'] + "</span></td></tr>" +
+	"\n <tr><td class='expanded-column-name'>nodeId:</td> <td class='expanded-column-value'><span>" + jobInfo['nodeId'] + "</span></td></tr>" +
+	"\n <tr><td class='expanded-column-name'>userInfo:</td> <td class='expanded-column-value'><span>" + jobInfo['userInfo'] + "</span></td></tr>" +
+	"\n <tr><td class='expanded-column-name'>providerInfo:</td> <td class='expanded-column-value'><span>" + jobInfo['providerInfo'] + "</span></td></tr>" +
+	getExpandedRowElementView('output', ['stdout', 'stderr'], [ jobInfo['stdoutDest'],  jobInfo['stderrDest']]) +
+	getExpandedRowElementView('input files', inputFileNames, inputFileURLs) +
+	getExpandedRowElementView('output files', [jobInfo['outFileMapping'].split(" ")[0]], [jobInfo['outFileMapping'].split(" ")[1]]) +
+	"\n</table>" +
+	"\n </td> </tr>";
+	tr.after(html);
+	$('a.proxy').click(function(ev){
+		ev.stopPropagation();
+		ev.preventDefault();
+		if($(this).attr('proxy')=='batch' ){
+			var proxyUrl = "ajax/actions.php?action=get_file&identifier="+job['identifier']+"&filename="+$(this).attr('filename')+"&url="+$(this).attr('href')+"&status="+(jobInfo['csStatus']).split(':')[0]+"&requesttoken="+oc_requesttoken;
+			if($(this).attr('filename')=='job' || $(this).attr('filename')=='stdout' || $(this).attr('filename')=='stderr' || $(this).attr('filename').endsWith('.sh')){
+					// Request will be sent for output if stdout/err requested
+					// Pop up alert and load output into window.
+				var title = $(this).text();
+				$("#loading-text").text(t("batch",  "Retrieving file..."));
+				$('#loading').show();
+				$('#textLoad').load(proxyUrl, "", function(text, status, xhr){$('#loading').hide(); OC.dialogs.info(text, title, function(){$('.oc-dialog').remove()});});
+			}
+			else{
+				window.location=proxyUrl+'&download=true';
+			}
+		}
+		else 	if($(this).attr('proxy')=='files'){
+			var path = $(this).attr('href').replace(/https:\/\/[^\/]+\/[^\/]+\//, '/');
+			// Just redirect to local SD file
+			OC.redirect(OC.webroot+'/index.php/apps/files?dir='+path.replace(/\/[^\/]+$/, ''));
+		}
+	});
 }
 
 function getRow(job){
 	//visible part
-	var str = "  <tr class='simple-row' userInfo='" + job['userInfo'] + "' providerInfo='"+ job['providerInfo'] + "' runningSeconds='" + job['runningSeconds'] + "'>" +
+	var identifier = job['identifier'].replace(/^.*\/([^\/]+)$/, '$1');
+	var str = "  <tr class='simple-row' userInfo='" + job['userInfo'] + "' identifier='"+ identifier +
+		"' created='" + job['created'] + 	"' url='" + job['identifier'] +"'>" + "'>" +
+		getRowElementSelector(identifier)+
+		getRowElementPlain('ID', identifier) +
 		getRowElementPlain('name', job['name']) +
-		getRowElementPlain('status', formatStatusRunning(job['csStatus'], job['runningSeconds'])) +
-		getRowElementView('view', job) +
-		"\n<td class='td-button'><a href='#' title=" + t('batch', 'Expand') + " class='expand-view permanent action icon icon-down-open'></a></td>" +
+		getRowElementPlain('status', job['csStatus']) +
+		"\n<td class='td-button'><a href='#' title=" + t('batch', 'Expand') + " class='expand-view permanent action icon icon-right-open'></a></td>" +
 		"\n<td class='td-button'><a href='#' title=" + t('batch', 'Delete job') + " class='delete-job permanent action icon icon-trash-empty'></a></td>" +
 		"\n</tr>";
-	//expanded information
-	str += getExpandedTable(job);
 	return str;
 }
 
@@ -73,7 +125,7 @@ function listJobs(callback){
 		url: OC.filePath('batch', 'ajax', 'actions.php'),
 		data: {
 			action: 'list_jobs',
-			pod_names: ''
+			job_names: ''
 		},
 		beforeSend: function(xhr){
 			ajaxBefore(xhr, "Retrieving table data...");
@@ -82,7 +134,7 @@ function listJobs(callback){
 			if(jsondata.status == 'success'){
 				var expanded_views = [];
 				// make an array of the job identifiers whose views are expanded
-				$('#jobstable #fileList tr.simple-row td a.icon-up-open').closest('tr').each(function(){
+				$('#jobstable #fileList tr.simple-row td a.icon-down-open').closest('tr').each(function(){
 					expanded_views.push($(this).attr('identifier'));
 				});
 				$('#jobstable #fileList tr').remove();
@@ -91,7 +143,7 @@ function listJobs(callback){
 				jsondata.data.forEach(function(value, index, array){
 					$('tbody#fileList').append(getRow(value));
 				});
-				updateJobsCount();
+				updateJobCount();
 				$('table#jobstable #fileList tr.simple-row').each(function(){
 					if($.inArray($(this).attr("identifier"), expanded_views) !== -1){
 						toggleExpanded($(this).find('td a.expand-view'));
@@ -106,7 +158,7 @@ function listJobs(callback){
 					OC.redirect('/');
 				}
 				else{
-					OC.dialogs.alert(t("batch", "list_jobs: Something went wrong..."), t("batch", "Error"));
+					OC.dialogs.alert(t("batch", "list_jobs: Something went wrong. Please set a work directory in your preferences."), t("batch", "Error"));
 				}
 			}
 		},
@@ -119,12 +171,16 @@ function listJobs(callback){
 	});
 }
 
-function submitJob(script){
+function submitJob(job_template_text, input_file, group){
+	var files = [];
+	files.push(input_file);
 	$.ajax({
 		url: OC.filePath('batch', 'ajax', 'actions.php'),
 		data: {
-			action: 'submit_job',
-			script: script
+			action: 'submit',
+			job_template_text: job_template_text,
+			input_files: files,
+			group: group
 		},
 		method: 'post',
 		beforeSend: function(xhr){
@@ -134,7 +190,7 @@ function submitJob(script){
 			if(jsondata.status == 'success'){
 				if(jsondata.data.identifier){
 					listJobs();
-					// if a previous run_pod call has outstanding timeouts, clear them
+					// if a previous run_job call has outstanding timeouts, clear them
 					$.submitJobTimeouts.forEach(function(timeout){
 						clearTimeout(timeout);
 					});
@@ -150,7 +206,7 @@ function submitJob(script){
 					}, 60000));
 				}
 				else{
-					OC.dialogs.alert(t("batch", "submit_job: Something went wrong..."), t("batch", "Error"));
+					OC.msg.finishedAction('#batch_message',  {status: 'error', 	data: {message: t("batch", "submit_job: Something went wrong...")}});
 				}
 			}
 			else if(jsondata.status == 'error'){
@@ -171,12 +227,49 @@ function submitJob(script){
 	});
 }
 
-function deleteJob(job_db_url){
+function getJobInfo(identifier, job, tr, callback){
 	$.ajax({
 		url: OC.filePath('batch', 'ajax', 'actions.php'),
 		data: {
-			action: "delete_job",
-			job_db_url: job_db_url
+			action: "get_job_info",
+			identifier: identifier
+		},
+		method: 'get',
+		beforeSend: function(xhr){
+			ajaxBefore(xhr, "Getting job info...");
+		},
+		complete: function(xhr){
+			ajaxCompleted(xhr);
+		},
+		success: function(data){
+			if(data.status == 'success'){
+				$('tr[identifier="' + data.identifier + '"]').remove();
+				// if a tooltip is shown when the element is removed, then there is no mouseover event to get rid of it.
+				$('body > div.tipsy').remove();
+				callback(job, data.data, tr);
+			}
+			else if(data.status == 'error'){
+				if(data.data && data.data.error && data.data.error == 'authentication_error'){
+					OC.redirect('/');
+				}
+				else{
+					OC.dialogs.alert(t("batch", "get_job_info: Something went wrong..."), t("batch", "Error"));
+					$('#jobstable tr[identifier="' + identifier + '"] td div[column=status] span').text('Could not retrieve job info.');
+				}
+			}
+		},
+		error:  function(jsondata){
+			OC.dialogs.alert(t("batch", "run_job: Something went wrong. "+jsondata), t("batch", "Error"));
+		}
+	});
+}
+
+function deleteJobs(identifiers){
+	$.ajax({
+		url: OC.filePath('batch', 'ajax', 'actions.php'),
+		data: {
+			action: "delete_jobs",
+			identifiers: JSON.stringify(identifiers)
 		},
 		method: 'post',
 		beforeSend: function(xhr){
@@ -213,18 +306,61 @@ function deleteJob(job_db_url){
 
 //////////// begin page interaction functions /////////////
 function toggleExpanded(expander){
-	if(expander.attr("class").search("icon-up-open") === -1){
+	if(expander.attr("class").search("icon-down-open") === -1){
 		expander.closest('tr').next().show();
-		expander.removeClass("icon-down-open").addClass("icon-up-open");
+		expander.removeClass("icon-right-open").addClass("icon-down-open");
+		//expanded information
+		var tr = expander.closest('tr.simple-row');
+		var job = [];
+		job['identifier'] =  tr.attr('identifier');
+		job['userInfo'] =  tr.attr('userInfo');
+		job['name'] =  tr.attr('name');
+		job['created'] =  tr.attr('created');
+		setExpandedTable(job, tr);
 	}
 	else{
-		expander.closest('tr').next().hide();
-		expander.removeClass("icon-up-open").addClass("icon-down-open");
+		expander.closest('tr').next().remove();
+		expander.removeClass("icon-down-open").addClass("icon-right-open");
 	}
 }
 
+function saveScript(job_script){
+	var select_value = job_script || $('#job_script').val();
+	if(!select_value){
+		return;
+	}
+	$.ajax({
+		url: OC.filePath('batch', 'ajax', 'actions.php'),
+		method: 'post',
+		data: {
+			action: 'save_script',
+			job_script: select_value,
+			job_script_text: $('#job_script_text').val()
+		},
+		beforeSend: function(xhr){
+			ajaxBefore(xhr, "Saving script...");
+		},
+		complete: function(xhr){
+			ajaxCompleted(xhr);
+		},
+		success: function(jsondata){
+			if(jsondata.status == 'success'){
+				OC.msg.finishedAction('#batch_message',  {status: 'success', 	data: {message: t("batch", "Script saved.")}});
+			}
+			else if(jsondata.status == 'error'){
+				OC.msg.finishedAction('#batch_message',  {status: 'error', 	data: {message: t("batch", "Script NOT saved.")}});
+				if(jsondata.data && jsondata.data.error && jsondata.data.error == 'authentication_error'){
+					OC.redirect('/');
+				}
+			}
+		},
+		error:  function(jsondata){
+			OC.dialogs.alert(t("batch", "get_script: Something went wrong. "+jsondata), t("batch", "Error"));
+		}
+	});
+}
+
 function loadScript(job_script){
-	$('#public_key').val('');
 	var select_value = job_script || $('#job_script').val();
 	if(!select_value){
 		return;
@@ -244,11 +380,10 @@ function loadScript(job_script){
 		},
 		success: function(jsondata){
 			if(jsondata.status == 'success'){
-
-// TODO:  get the script and load it into textfield
-
+				$('#job_script_text').val(jsondata.data);
 			}
 			else if(jsondata.status == 'error'){
+				OC.msg.finishedAction('#batch_message',  {status: 'error', 	data: {message: t("batch", "Script could not be loaded.")}});
 				if(jsondata.data && jsondata.data.error && jsondata.data.error == 'authentication_error'){
 					OC.redirect('/');
 				}
@@ -261,7 +396,7 @@ function loadScript(job_script){
 }
 
 function toggleNewJob(){
-	$('#newjob').slideToggle();
+	$('#newjob').slideToggle(400, batchCreateScriptSelect);
 	$('#job-create').toggleClass('btn-primary');
 	$('#job-create').toggleClass('btn-default');
 	$('#newjob #ok a').toggleClass('btn-default');
@@ -286,6 +421,45 @@ function ajaxCompleted(xhr){
 	}
 }
 
+function batchCreateScriptSelect(){
+	$('#job_script').focus(function(){
+		$('#job_script').autocomplete("search","");
+	});
+	$('#job_script').autocomplete({minLength:0,
+		appendTo: '#newjob',
+		open: function() {
+			$("ul.ui-menu").width($(this).innerWidth());
+			$("ul.ui-menu").css('max-height', '178px');
+			$("ul.ui-menu").css('background', '#e0e0e0');
+			$("ul.ui-menu li").css('width', 'max-content');
+			$("ul.ui-menu").css('overflow',  'scroll');
+			$("ul.ui-menu").css('scrollbar-color',  '#747474 #e0e0e0');
+		},
+		source: function(request, response) {
+			$.getJSON(
+				OC.filePath('batch','ajax', 'autocompletescriptfiles.php'),
+				{
+					StartDir: $('#job_script').attr('batch_folder'),
+					dir: $('#job_script').val(), 
+				},
+				function(scriptFile){
+					$('#job_script').autocomplete('option','autoFocus', true);
+					response(scriptFile);
+				}
+			);
+		}
+	});
+	$('#job_script:visible').focus();
+	}
+
+function deleteSelectedJobs(){
+	var identifiers = $(".jobselect:checked").map(function () {
+		return $(this).attr("identifier");
+	}).get();
+	deleteJobs(identifiers);
+}
+
+
 $(document).ready(function(){
 
 	var hostname = $(location).attr('host');
@@ -294,11 +468,19 @@ $(document).ready(function(){
 	$.xhrPool = [];
 
 	$('a#job-create').click(function(){
-		toggleNewJob()
+		toggleNewJob();
 	});
 
-	$('#newpod #cancel').click(function(){
-		toggleNewJob()
+	$('#newjob #cancel').click(function(){
+		toggleNewJob();
+	});
+	
+	$('#newjob #load').click(function(){
+		loadScript();
+	});
+	
+	$('#newjob #save').click(function(){
+		saveScript();
 	});
 
 	$("#job_script").prop("selectedIndex", -1);
@@ -308,9 +490,8 @@ $(document).ready(function(){
 	});
 
 	$('#newjob #ok').on('click', function(){
-		var job_script = $('#job_script').val();
-		submitJob(job_script);
-		return false;
+		var job_script_text = $('#job_script_text').val();
+		submitJob(job_script_text, $('input#batch_input_file').val(), group = $('#group_folder').val());
 	});
 
 	$("#jobstable td .expand-view").live('click', function(){
@@ -318,14 +499,15 @@ $(document).ready(function(){
 	});
 
 	$("#jobstable td .delete-job").live('click', function(){
-		var jobSelectedID = $(this).closest('tr').attr('identifier');
+		var identifier = $(this).closest('tr').attr('identifier');
+		var jobURL = $(this).closest('tr').attr('url').replace(/^(https:\/\/[^\.]+)\.[^\.]+\.[^\.]+(\/.+)/, '$1$2'); //The identifier is w/o the fully qualified hostname
 		$('#dialogalert').html("<div>" + t("batch", "Are you sure you want to delete the job") + " " +
-				jobSelectedID + "?</div>");
+				identifier + "?</div>");
 		$('#dialogalert').dialog({
 			buttons: [{
 					text: 'Delete',
 					click: function(){
-						deleteJob(jobSelectedID);
+						deleteJobs([identifier]);
 						$(this).dialog('close');
 					}
 				},
@@ -342,6 +524,22 @@ $(document).ready(function(){
 	$('#jobs_refresh').click(function(e){
 		$('table#jobstable tfoot.summary tr td span.info').remove();
 		listJobs();
+	});
+	
+	$('#selectAllJobs').click(function(e){
+		var isChecked = $('#selectAllJobs').is(":checked");
+		$('.jobselect').prop( 'checked', isChecked);
+		$('#delete_jobs').attr('disabled', !isChecked);
+	});
+	
+	$('.jobselect').live('click', function(e){
+		var disableButton = !($(".jobselect:checked").length==1 && $(this).is(":checked"));
+		$('#delete_jobs').attr('disabled', disableButton);
+		$('#selectAllJobs').prop('checked', !disableButton);
+	});
+	
+	$('#delete_jobs').click(function(e){
+		deleteSelectedJobs();
 	});
 
 	listJobs(function(){

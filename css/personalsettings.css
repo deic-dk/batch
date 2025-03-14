@@ -1,5 +1,11 @@
-#batchSettings .button {
+#batchSettings .button.batch_choose_batch_folder {
 	margin-left: 2px;
+	vertical-align: top;
+}
+
+#batch_settings_submit.button {
+	margin-left: 52px;
+	margin-top: 4px;
 }
 
 .batchSettingsIcon {
@@ -15,7 +21,7 @@
   filter: invert(90%) sepia(9%) saturate(3383%) hue-rotate(14deg) brightness(92%) contrast(82%);
 }
 
-#batchSettings .batch_choose_script_folder {
+.batch_choose_batch_folder, .batch_choose_input_file, .batch_choose_output_folder {
 	margin-bottom: 6px;
 }
 
@@ -27,4 +33,8 @@
 
 .ui-widget-content a {
   color: #0376a3;
+}
+
+#batchSettings input {
+  width: 320px;
 }

@@ -134,6 +134,7 @@ function listJobs(callback){
 			ajaxBefore(xhr, "Retrieving table data...");
 		},
 		success: function(jsondata){
+			$('#selectAllJobs').prop('checked', false);
 			if(jsondata.status == 'success'){
 				var expanded_views = [];
 				// make an array of the job identifiers whose views are expanded
@@ -285,7 +286,13 @@ function deleteJobs(identifiers){
 				$('tr[identifier="' + data.identifier + '"]').remove();
 				// if a tooltip is shown when the element is removed, then there is no mouseover event to get rid of it.
 				$('body > div.tipsy').remove();
-				updateJobCount();
+				$.submitJobTimeouts.forEach(function(timeout){
+					clearTimeout(timeout);
+				});
+				$.submitJobTimeouts = [];
+				$.submitJobTimeouts.push(setTimeout(function(){
+					listJobs();
+				}, 10000));
 			}
 			else if(data.status == 'error'){
 				if(data.data && data.data.error && data.data.error == 'authentication_error'){

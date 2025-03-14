@@ -12,10 +12,11 @@ function getExpandedRowElementView(name, items, urls){
 	var item;
 	var proxyAttr;
 	var re = new RegExp( "https://"+window.location.host+".*");
+	var re1 = new RegExp( "https://10\.2\.[0-9]+\.[0-9]+/.*");
 	for(var i=0; i<items.length; ++i){
 		item = items[i].replace(/^.*\/([^\/]+)$/, '$1');
 		proxyAttr = "filename='"+item+"' ";
-		if(urls[i].match(re)){
+		if(urls[i].match(re) || urls[i].match(re1)){
 			// We're getting a file from our own files on this silo
 			proxyAttr = proxyAttr+"class='proxy' proxy='files' ";
 		}
@@ -91,7 +92,9 @@ function updateTr(job, jobInfo, tr){
 		else 	if($(this).attr('proxy')=='files'){
 			var path = $(this).attr('href').replace(/https:\/\/[^\/]+\/[^\/]+\//, '/');
 			// Just redirect to local SD file
-			OC.redirect(OC.webroot+'/index.php/apps/files?dir='+path.replace(/\/[^\/]+$/, ''));
+			var dir = path.replace(/\/[^\/]+$/, '');
+			var file = path.replace(/.*\/([^\/]+)$/, '$1');
+			OC.redirect(OC.webroot+'/index.php/apps/files?dir='+dir+'&file='+file);
 		}
 	});
 }
@@ -274,8 +277,10 @@ function deleteJobs(identifiers){
 		method: 'post',
 		beforeSend: function(xhr){
 			ajaxBefore(xhr, "Deleting your job...");
-			$('#jobstable tr[identifier="' + identifier + '"] td a.delete-job').hide();
-			$('#jobstable tr[identifier="' + identifier + '"] td div[column=status] span').text('Deleting');
+			for(var i=0; i<identifiers.length; ++i){
+				$('#jobstable tr[identifier="' + identifiers[i] + '"] td a.delete-job').hide();
+				$('#jobstable tr[identifier="' + identifiers[i] + '"] td div[column=status] span').text('Deleting');
+			}
 		},
 		complete: function(xhr){
 			ajaxCompleted(xhr);
@@ -456,7 +461,23 @@ function deleteSelectedJobs(){
 	var identifiers = $(".jobselect:checked").map(function () {
 		return $(this).attr("identifier");
 	}).get();
-	deleteJobs(identifiers);
+	$('#dialogalert').html("<div>" + t("batch", "Are you sure you want to delete the selected jobs")+"?</div>");
+	$('#dialogalert').dialog({
+		buttons: [{
+				text: 'Delete',
+				click: function(){
+					deleteJobs(identifiers);
+					$(this).dialog('close');
+				}
+			},
+			{
+				text: 'Cancel',
+				click: function(){
+					$(this).dialog('close');
+				}
+			}
+		]
+	});
 }
 
 
@@ -500,7 +521,6 @@ $(document).ready(function(){
 
 	$("#jobstable td .delete-job").live('click', function(){
 		var identifier = $(this).closest('tr').attr('identifier');
-		var jobURL = $(this).closest('tr').attr('url').replace(/^(https:\/\/[^\.]+)\.[^\.]+\.[^\.]+(\/.+)/, '$1$2'); //The identifier is w/o the fully qualified hostname
 		$('#dialogalert').html("<div>" + t("batch", "Are you sure you want to delete the job") + " " +
 				identifier + "?</div>");
 		$('#dialogalert').dialog({
@@ -533,9 +553,10 @@ $(document).ready(function(){
 	});
 	
 	$('.jobselect').live('click', function(e){
-		var disableButton = !($(".jobselect:checked").length==1 && $(this).is(":checked"));
-		$('#delete_jobs').attr('disabled', disableButton);
-		$('#selectAllJobs').prop('checked', !disableButton);
+		var enableButton = $(".jobselect:checked").length>0 || $(".jobselect:checked").length==1 && !$(this).is(":checked");
+		var allSelected = $(".jobselect").length==$(".jobselect:checked").length;
+		$('#delete_jobs').attr('disabled', !enableButton);
+		$('#selectAllJobs').prop('checked', allSelected);
 	});
 	
 	$('#delete_jobs').click(function(e){

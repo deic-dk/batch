@@ -114,6 +114,7 @@ class OC_Batch_Util {
 	}
 	public function getContent($uri){
 		\OCP\Util::writeLog('batch', 'Getting URL '.$uri, \OC_Log::WARN);
+		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_CAINFO, \OCA\FilesSharding\Lib::$wsCACert);
 		curl_setopt($ch, CURLOPT_SSLCERT, $this->certFile);
@@ -124,6 +125,7 @@ class OC_Batch_Util {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		$data = curl_exec($ch);
 		curl_close($ch);
+		unlink($this->keyFile); // Clean up temporary unencrypted key file
 		return $data;
 	}
 	private function mkCol($url){
@@ -150,7 +152,7 @@ class OC_Batch_Util {
 		curl_setopt($ch, CURLOPT_USERAGENT, 'ScienceData/cURL');
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		$data = curl_exec($ch);
+		curl_exec($ch);
 		$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 		return $httpcode;
@@ -241,7 +243,6 @@ class OC_Batch_Util {
 			\OCP\Util::writeLog('batch', 'API URL not set', \OC_Log::ERROR);
 			return false;
 		}
-		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
 		$job = [];
 		$text = $this->getContent($this->api_url."db/jobs/".$identifier."/");
 		$lines = explode("\n", $text);
@@ -249,7 +250,6 @@ class OC_Batch_Util {
 			$keyVal = explode(": ", $line);
 			$job[$keyVal[0]] = $keyVal[1];
 		}
-		unlink($this->keyFile); // Clean up temporary unencrypted key file
 		\OCP\Util::writeLog('batch', 'Returning job '.serialize($job), \OC_Log::WARN);
 		return $job;
 	}
@@ -268,7 +268,7 @@ class OC_Batch_Util {
 		$inputFilename = basename($inputFile);
 		$inputFileBasename = preg_replace('|\.[^\.]+$|', '', $inputFilename);
 		$batch_folder = \OCP\Config::getUserValue($this->user, 'batch', 'batch_folder');
-		$batch_folder_url = $homeServerPrivateUrl.'/files'.$batch_folder;
+		$batch_folder_url = $homeServerPrivateUrl.'/grid'.$batch_folder;
 		# Substitute in job script
 		$pos = strpos($jobScriptText, '#GRIDFACTORY');
 		$jobScriptText = substr_replace($jobScriptText, "#GRIDFACTORY -u " . $job_id . "\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));

@@ -26,8 +26,8 @@ else
   helper="helpers"
 fi
 
-curl -o $helper.py -L https://raw.githubusercontent.com/deic-dk/mediacms/refs/heads/main/files/$helper.py
-sed -i -E 's|(from django.conf import settings)|import settings|' $helper.py
+curl -o helper.py -L https://raw.githubusercontent.com/deic-dk/mediacms/refs/heads/main/files/$helper.py
+sed -i -E 's|(from django.conf import settings)|import settings|' helper.py
 
 # Generate settings
 
@@ -62,8 +62,8 @@ python3 -c "
 import json
 import subprocess
 import settings
-import $helper
-from $helper import media_file_info, produce_ffmpeg_commands
+import helper
+from helper import media_file_info, produce_ffmpeg_commands
 media_info = media_file_info(settings.media_file)
 ffmpeg_command = produce_ffmpeg_commands(settings.media_file, json.dumps(media_info), settings.resolution, settings.codec, settings.output_filename, settings.pass_file, settings.chunk)
 subprocess.run(ffmpeg_command[0])

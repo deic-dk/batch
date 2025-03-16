@@ -14,7 +14,7 @@
 #GRIDFACTORY -o IN_FILENAME.out.mp4 WORK_FOLDER_URL/output_files/IN_FILENAME_720p.mp4
 #GRIDFACTORY -r UTIL/MpegUtils-1.0
 #GRIDFACTORY -n transcode_720p-IN_FILENAME
-#GRIDFACTORY -s SSL_DN
+#GRIDFACTORY -s MY_SSL_DN
 #
 ################################################
 

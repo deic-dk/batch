@@ -7,6 +7,7 @@ OCP\App::checkAppEnabled('files_markdown');
 
 OCP\App::setActiveNavigationEntry('batch');
 
+require_once('apps/chooser/lib/lib_chooser.php');
 require_once('apps/batch/lib/util.php');
 
 OCP\Util::addStyle('batch', 'style');
@@ -19,19 +20,30 @@ OC_Util::addScript('core', 'jquery.inview');
 OC_Util::addScript('files_markdown','marked');
 OCP\Util::addScript('batch', 'browse_input_file');
 
-$tmpl = new OCP\Template('batch', 'main', 'user');
+// Only enable if there's a valid certificate and internal access is allowed
 $user = OCP\USER::getUser();
-if(OCP\App::isEnabled('user_group_admin')){
-	$groups = OC_User_Group_Admin_Util::getUserGroups($user, false, false, true);
-	$tmpl->assign('member_groups', $groups);
+$valid = \OC_Chooser::getSDCertIsValid($user);
+$davEnabled = \OC_Chooser::getInternalDavEnabled($user)=='yes';
+if($valid && $davEnabled){
+	$tmpl = new OCP\Template('batch', 'main', 'user');
+	$user = OCP\USER::getUser();
+	if(OCP\App::isEnabled('user_group_admin')){
+		$groups = OC_User_Group_Admin_Util::getUserGroups($user, false, false, true);
+		$tmpl->assign('member_groups', $groups);
+	}
+	$batch_folder = \OCP\Config::getUserValue($user, 'batch', 'batch_folder');
+	$api_url = \OCP\Config::getUserValue($user, 'batch', 'api_url', '');
+	if(empty($api_url)){
+		$api_url = OC_Config::getValue("batch_api_url", "https://batch.sciencedata.dk/");
+	}
+	
+	$tmpl->assign('batch_folder', $batch_folder);
+	$tmpl->assign('api_url', $api_url);
+	$tmpl->printPage();
 }
-$batch_folder = \OCP\Config::getUserValue($user, 'batch', 'batch_folder');
-$api_url = \OCP\Config::getUserValue($user, 'batch', 'api_url', '');
-if(empty($api_url)){
-	$api_url = OC_Config::getValue("batch_api_url", "https://batch.sciencedata.dk/");
+else{
+	$tmpl = new OCP\Template('batch', 'disabled', 'user');
+	$tmpl->printPage();
 }
 
-$tmpl->assign('batch_folder', $batch_folder);
-$tmpl->assign('api_url', $api_url);
-$tmpl->printPage();
 

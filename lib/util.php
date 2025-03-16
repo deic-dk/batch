@@ -247,6 +247,9 @@ class OC_Batch_Util {
 		$text = $this->getContent($this->api_url."db/jobs/".$identifier."/");
 		$lines = explode("\n", $text);
 		foreach($lines as $line){
+			if(empty($line)){
+				continue;
+			}
 			$keyVal = explode(": ", $line);
 			$job[$keyVal[0]] = $keyVal[1];
 		}
@@ -276,7 +279,7 @@ class OC_Batch_Util {
 		$jobScriptText = str_replace('IN_FILENAME', $inputFileBasename, $jobScriptText);
 		$jobScriptText = str_replace('IN_FILE', $inputFilename, $jobScriptText);
 		$jobScriptText = str_replace('WORK_FOLDER_URL', $batch_folder_url, $jobScriptText);
-		$jobScriptText = str_replace('SSL_DN', $this->dn, $jobScriptText);
+		$jobScriptText = str_replace('MY_SSL_DN', $this->dn, $jobScriptText);
 		\OCP\Util::writeLog('batch', 'Creating job dir '.$job_id, \OC_Log::WARN);
 		$this->mkCol($job_id);
 		\OCP\Util::writeLog('batch', 'Uploading job '.$job_id."/job", \OC_Log::WARN);

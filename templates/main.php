@@ -20,9 +20,9 @@
 								p($l->t("New job "));
 								?>
 							</a>
-				 </div>
+				 		</div>
+					</div>
 				</div>
-			</div>
 			</div>
 			<div id="newjob" class="apanel">
 				<span class="spanpanel" >

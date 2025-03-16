@@ -245,7 +245,13 @@ function getJobInfo(identifier, job, tr, callback){
 				$('tr[identifier="' + data.identifier + '"]').remove();
 				// if a tooltip is shown when the element is removed, then there is no mouseover event to get rid of it.
 				$('body > div.tipsy').remove();
-				callback(job, data.data, tr);
+				if(typeof data.data!=='undefined' && data.data!=null){
+					callback(job, data.data, tr);
+				}
+				else{
+					OC.dialogs.alert(t("batch", "get_job_info: Something went wrong..."), t("batch", "Error"));
+					$('#jobstable tr[identifier="' + identifier + '"] td div[column=status] span').text('Could not retrieve job info.');
+				}
 			}
 			else if(data.status == 'error'){
 				if(data.data && data.data.error && data.data.error == 'authentication_error'){
@@ -272,7 +278,7 @@ function deleteJobs(identifiers){
 		},
 		method: 'post',
 		beforeSend: function(xhr){
-			ajaxBefore(xhr, "Deleting your job...");
+			ajaxBefore(xhr, "Deleting your job(s)...");
 			for(var i=0; i<identifiers.length; ++i){
 				$('#jobstable tr[identifier="' + identifiers[i] + '"] td a.delete-job').hide();
 				$('#jobstable tr[identifier="' + identifiers[i] + '"] td div[column=status] span').text('Deleting');

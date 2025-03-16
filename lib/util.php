@@ -112,7 +112,7 @@ class OC_Batch_Util {
 		}
 		return $scriptFiles;
 	}
-	public function getContent($uri){
+	public function getContent($uri, $proxy=false){
 		\OCP\Util::writeLog('batch', 'Getting URL '.$uri, \OC_Log::WARN);
 		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
 		$ch = curl_init();
@@ -123,6 +123,12 @@ class OC_Batch_Util {
 		curl_setopt($ch, CURLOPT_USERAGENT, 'ScienceData/cURL');
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		if($proxy){
+			curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($curl, $data) {
+				echo $data;
+				return strlen($data);
+			});
+		}
 		$data = curl_exec($ch);
 		curl_close($ch);
 		unlink($this->keyFile); // Clean up temporary unencrypted key file

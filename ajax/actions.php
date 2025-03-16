@@ -117,7 +117,7 @@ elseif($_REQUEST['action']=='get_file'){
 			$util->requestJobOutput($_REQUEST['identifier']);
 		}
 	}
-	$file_content = $util->getContent($url);
+	$file_content = $util->getContent($url, true);
 	if(!empty($file_content)){
 		echo $file_content;
 	}

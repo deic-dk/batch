@@ -346,6 +346,10 @@ label.batch_choose_input_file.button {
 	margin-right: 12px;
 }
 
+#fileList a.proxy[filename=stdout], #fileList a.proxy[filename=stderr] {
+  margin-right: 4px;
+}
+
 #fileList a.link {
   font-size: 12px;
 }

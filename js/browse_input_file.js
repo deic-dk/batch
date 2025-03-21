@@ -15,9 +15,11 @@ $(document).ready(function(){
 			folder = '/'+folder;
 		}
 		setInputFile(folder);
+  	choose_input_file_dialog.hide();
 		choose_input_file_dialog.dialog("close");
  	};
  	buttons[t("batch", "Cancel")] = function() {
+  	choose_input_file_dialog.hide();
  		choose_input_file_dialog.dialog("close");
 	};
 	choose_input_file_dialog = $("div.batch_input_file_dialog").dialog({//create dialog, but keep it closed
@@ -64,6 +66,7 @@ $(document).ready(function(){
 	function(file) {
 	  if(file.slice(-1)!="/"){// file double-clicked
 	  	setInputFile(file);
+	  	choose_input_file_dialog.hide();
 	  	choose_input_file_dialog.dialog("close");
 	  }
 	});

@@ -223,7 +223,7 @@ class OC_Batch_Util {
 			return false;
 		}
 		$jobs = [];
-		$text = $this->getContent($api_url."db/jobs/");
+		$text = $this->getContent($api_url."db/jobs/?userInfo=".$this->dn);
 		$lines = explode("\n", $text);
 		$firstLine = true;
 		foreach($lines as $line){
@@ -282,8 +282,8 @@ class OC_Batch_Util {
 		$pos = strpos($jobScriptText, '#GRIDFACTORY');
 		$jobScriptText = substr_replace($jobScriptText, "#GRIDFACTORY -u " . $job_id . "\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));
 		$jobScriptText = str_replace('IN_FILE_URL', $inputFileUrl, $jobScriptText);
-		$jobScriptText = str_replace('IN_FILENAME', $inputFileBasename, $jobScriptText);
-		$jobScriptText = str_replace('IN_FILE', $inputFilename, $jobScriptText);
+		$jobScriptText = str_replace('IN_FILENAME', $inputFilename, $jobScriptText);
+		$jobScriptText = str_replace('IN_BASENAME', $inputFileBasename, $jobScriptText);
 		$jobScriptText = str_replace('WORK_FOLDER_URL', $batch_folder_url, $jobScriptText);
 		$jobScriptText = str_replace('MY_SSL_DN', $this->dn, $jobScriptText);
 		\OCP\Util::writeLog('batch', 'Creating job dir '.$job_id, \OC_Log::WARN);

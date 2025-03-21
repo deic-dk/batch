@@ -3,14 +3,15 @@
 OCP\JSON::checkAppEnabled('files_sharding');
 OCP\JSON::checkAppEnabled('chooser');
 
-require_once('apps/chooser/lib/lib_chooser.php');
-
-// Only enable fileactions if there's a valid certificate and internal access is allowed
-$user = OCP\USER::getUser();
-$valid = \OC_Chooser::getSDCertIsValid($user);
-$davEnabled = \OC_Chooser::getInternalDavEnabled($user)=='yes';
-
 if(\OCP\User::isLoggedIn()){
+	
+	require_once('apps/chooser/lib/lib_chooser.php');
+	
+	// Only enable fileactions if there's a valid certificate and internal access is allowed
+	$user = OCP\USER::getUser();
+	$valid = \OC_Chooser::getSDCertIsValid($user);
+	$davEnabled = \OC_Chooser::getInternalDavEnabled($user)=='yes';
+	
 	if(isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], "/settings/")===false &&
 			strpos($_SERVER['REQUEST_URI'], "/apps/user_group_admin/")===false &&
 			strpos($_SERVER['REQUEST_URI'], "&view=trashbin")===false){

@@ -550,7 +550,7 @@ $(document).ready(function(){
 	});
 
 	$('#jobs_refresh').click(function(e){
-		$('table#jobstable tfoot.summary tr td span.info').remove();
+		//$('table#jobstable tfoot.summary tr td span.info').remove();
 		listJobs();
 	});
 	

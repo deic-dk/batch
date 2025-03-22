@@ -6,7 +6,7 @@
 # !! NOTICE: The max size of the input file is 470 bytes. !!
 # You can change the user you encrypt the file to
 # by replacing SD_USER with the ScienceData username
-# of a  user _who has generated a certificate in her
+# of a  user who has generated a certificate in her
 # settings. E.g. some_user@dtu.dk.
 #
 ################################################

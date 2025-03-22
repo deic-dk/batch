@@ -6,6 +6,7 @@ OCP\JSON::checkAppEnabled('chooser');
 class OC_Batch_Util {
 	
 	private $api_url;
+	private $local_api_url;
 	private $user;
 	private $batchFolder;
 	private $certFile;
@@ -15,6 +16,7 @@ class OC_Batch_Util {
 	function __construct($user){
 		$this->user = $user;
 		$this->api_url = \OCP\Config::getUserValue($this->user, 'batch', 'api_url', '');
+		$this->local_api_url = preg_replace('|^(https://[^\./]+)\.[^/]+/|', '\1/', $this->api_url);
 		$this->batchFolder = \OCP\Config::getUserValue($this->user, 'batch', 'batch_folder');
 		$this->certFile = \OC_Chooser::getSDCertLocation($this->user);
 		$this->keyFile = \OC_Chooser::decryptSDKey($this->user);
@@ -250,7 +252,7 @@ class OC_Batch_Util {
 			return false;
 		}
 		$job = [];
-		$text = $this->getContent($this->api_url."db/jobs/".$identifier."/");
+		$text = $this->getContent($this->api_url.'db/jobs/'.$identifier.'/');
 		$lines = explode("\n", $text);
 		foreach($lines as $line){
 			if(empty($line)){
@@ -258,6 +260,11 @@ class OC_Batch_Util {
 			}
 			$keyVal = explode(": ", $line);
 			$job[$keyVal[0]] = $keyVal[1];
+		}
+		$jobUrl = $this->api_url.'gridfactory/jobs/'.$identifier.'/job';
+		$localJobUrl = $this->local_api_url.'gridfactory/jobs/'.$identifier.'/job';
+		if(!in_array($jobUrl, explode(' ', $job['inputFileURLs'])) && !in_array($localJobUrl, explode(' ', $job['inputFileURLs']))){
+			$job['inputFileURLs'] .= " ".$localJobUrl;
 		}
 		\OCP\Util::writeLog('batch', 'Returning job '.serialize($job), \OC_Log::WARN);
 		return $job;
@@ -287,6 +294,7 @@ class OC_Batch_Util {
 		$jobScriptText = str_replace('WORK_FOLDER_URL', $batch_folder_url, $jobScriptText);
 		$jobScriptText = str_replace('HOME_SERVER_PRIVATE_URL', $homeServerPrivateUrl, $jobScriptText);
 		$jobScriptText = str_replace('MY_SSL_DN', $this->dn, $jobScriptText);
+		$jobScriptText = str_replace('SD_USER', $this->user, $jobScriptText);
 		\OCP\Util::writeLog('batch', 'Creating job dir '.$job_id, \OC_Log::WARN);
 		$this->mkCol($job_id);
 		\OCP\Util::writeLog('batch', 'Uploading job '.$job_id."/job", \OC_Log::WARN);

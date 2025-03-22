@@ -2,9 +2,7 @@
 
 ################################################
 #
-# Transcode mp4 file to 360p.
-# using the helper script of the ScienceData
-# MediaCMS installation.
+# # Simple example job template: uncompress file with XZ.
 #
 ################################################
 #
@@ -13,7 +11,7 @@
 #GRIDFACTORY -i IN_FILE_URL
 #GRIDFACTORY -o IN_BASENAME WORK_FOLDER_URL/output_files/IN_BASENAME
 #GRIDFACTORY -r UTIL/XZ
-#GRIDFACTORY -n UXZ-IN_FILENAME
+#GRIDFACTORY -n UNXZ-IN_FILENAME
 #GRIDFACTORY -s MY_SSL_DN
 #
 ################################################

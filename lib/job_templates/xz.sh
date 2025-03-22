@@ -2,9 +2,7 @@
 
 ################################################
 #
-# Transcode mp4 file to 360p.
-# using the helper script of the ScienceData
-# MediaCMS installation.
+# Simple example job template: compress file with XZ.
 #
 ################################################
 #

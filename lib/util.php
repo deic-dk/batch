@@ -285,6 +285,7 @@ class OC_Batch_Util {
 		$jobScriptText = str_replace('IN_FILENAME', $inputFilename, $jobScriptText);
 		$jobScriptText = str_replace('IN_BASENAME', $inputFileBasename, $jobScriptText);
 		$jobScriptText = str_replace('WORK_FOLDER_URL', $batch_folder_url, $jobScriptText);
+		$jobScriptText = str_replace('HOME_SERVER_PRIVATE_URL', $homeServerPrivateUrl, $jobScriptText);
 		$jobScriptText = str_replace('MY_SSL_DN', $this->dn, $jobScriptText);
 		\OCP\Util::writeLog('batch', 'Creating job dir '.$job_id, \OC_Log::WARN);
 		$this->mkCol($job_id);

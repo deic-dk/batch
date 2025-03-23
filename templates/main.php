@@ -109,7 +109,7 @@
 		</div> 
 	</div>
 	<h2 class="running_jobs"><?php p($l->t("Jobs")); ?>
-	<a id="jobs_refresh" class="btn btn-default" title="<?php p($l->t("Refresh")); ?>">&#8634;</a>
+	<a id="jobs_refresh" class="btn btn-default" title="<?php p($l->t("Refresh")); ?>">&circlearrowright;</a>
 	<div class="deleteJobs"><a id="delete_jobs" class="btn btn-default icon-trash-empty" title="<?php p($l->t("Delete selected jobs")); ?>" disabled="true"></a></div>
 	</h2>
 	<div id="running_jobs">

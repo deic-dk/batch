@@ -55,10 +55,21 @@ function updateTr(job, jobInfo, tr){
 	var inputFileNames = [];
 	var inputFileURLs = [];
 	var api_url = $('#app-content-batch').attr('apiUrl');
-	//inputFileNames.push("job");
-	//inputFileURLs.push(api_url+"gridfactory/jobs/"+job['identifier']+"/job");
 	inputFileNames.push(...jobInfo['inputFileURLs'].split(" "));
 	inputFileURLs.push(...jobInfo['inputFileURLs'].split(" "));
+	var outputFileNames = [];
+	var outputFileURLs = [];
+	var outArr = jobInfo['outFileMapping'].split(" ");
+	if(outArr.length>1){
+		for (var i = 0; i < outArr.length; i++) {
+			if(i % 2 === 0) {
+				outputFileNames.push(outArr[i]);
+			}
+			else{
+				outputFileURLs.push(outArr[i]);
+			}
+		}
+	}
 	var html = "<tr class='expanded-row' identifier='" + job['identifier'] + "'> <td colspan='5'>" +
 	"\n<table id='expanded-" + job['identifier'] + "' class='panel expanded-table'>" +
 	"\n <tr><td class='expanded-column-name'>created:</td> <td class='expanded-column-value'><span>" +  job['created'] + "</span></td></tr>" +
@@ -68,7 +79,7 @@ function updateTr(job, jobInfo, tr){
 	"\n <tr><td class='expanded-column-name'>providerInfo:</td> <td class='expanded-column-value'><span>" + jobInfo['providerInfo'] + "</span></td></tr>" +
 	getExpandedRowElementView('output', ['stdout', 'stderr'], [ jobInfo['stdoutDest'],  jobInfo['stderrDest']]) +
 	getExpandedRowElementView('input files', inputFileNames, inputFileURLs) +
-	getExpandedRowElementView('output files', [jobInfo['outFileMapping'].split(" ")[0]], [jobInfo['outFileMapping'].split(" ")[1]]) +
+	getExpandedRowElementView('output files', outputFileNames, outputFileURLs)+
 	"\n</table>" +
 	"\n </td> </tr>";
 	tr.after(html);
@@ -449,11 +460,12 @@ function batchCreateScriptSelect(){
 			$("ul.ui-menu").css('scrollbar-color',  '#747474 #e0e0e0');
 		},
 		source: function(request, response) {
+			var templates_folder = $('#job_script').attr('batch_folder') + '/job_templates';
 			$.getJSON(
 				OC.filePath('batch','ajax', 'autocompletescriptfiles.php'),
 				{
-					StartDir: $('#job_script').attr('batch_folder'),
-					dir: $('#job_script').val(), 
+					StartDir: templates_folder,
+					dir: templates_folder, 
 				},
 				function(scriptFile){
 					$('#job_script').autocomplete('option','autoFocus', true);

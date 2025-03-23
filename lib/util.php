@@ -26,6 +26,26 @@ class OC_Batch_Util {
 		$this->dn = \OC_Chooser::getSDCertSubject($this->user);
 	}
 	
+	private static function recursive_copy($src, $dst) {
+		$dir = opendir($src);
+		@mkdir($dst);
+		$new_files = [];
+		while(( $file = readdir($dir)) ) {
+			if (( $file != '.' ) && ( $file != '..' )) {
+				if ( is_dir($src . '/' . $file) ) {
+					self::recursive_copy($src .'/'. $file, $dst .'/'. $file);
+				}
+				else {
+					$new_file = $dst .'/'. $file;
+					copy($src .'/'. $file, $new_file);
+					$new_files [] = $new_file;
+				}
+			}
+		}
+		closedir($dir);
+		return $new_files;
+	}
+	
 	/**
 	 * Copy over scripts from lib/scripts to the folder chosen by the user in her settings
 	 * @param String $batchFolder
@@ -37,22 +57,8 @@ class OC_Batch_Util {
 		}
 		$templatesFolder = dirname(__FILE__).'/job_templates';
 		\OCP\Util::writeLog('batch', 'Copying'.$templatesFolder.'-->'.$myTemplatesFolderFullPath, \OC_Log::WARN);
-		$files = array_diff(scandir($templatesFolder), array('.', '..'));
-		$success = true;
-		$newfiles = [];
-		foreach($files as $file){
-			if(substr($file, -3)=='.sh'){
-				$srcFileFullPath = $templatesFolder.'/'.$file;
-				$newfileFullPath = $myTemplatesFolderFullPath.'/'.$file;
-				$ok = copy($srcFileFullPath, $newfileFullPath);
-				if(!$ok){
-					$success = false;
-					break;
-				}
-				$newfiles[] = $file;
-			}
-		}
-		if($success){
+		$newfiles = self::recursive_copy($templatesFolder, $myTemplatesFolderFullPath);
+		if(!empty($newfiles)){
 			$view = \OC\Files\Filesystem::getView();
 			$absPath = $view->getAbsolutePath($this->batchFolder);
 			list($storage, $internalPath) = \OC\Files\Filesystem::resolvePath('/' . $absPath);

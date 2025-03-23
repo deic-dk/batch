@@ -2,7 +2,8 @@
 
 ################################################
 #
-# Encrypt a small file with openssl.
+# Encrypt a small file with openssl using your
+# ScienceData X.509 public certificate.
 # !! NOTICE: The max size of the input file is 470 bytes. !!
 # You can change the user you encrypt the file to
 # by replacing SD_USER with the ScienceData username
@@ -21,8 +22,13 @@
 #
 ################################################
 
+
+# Fetch public certificate
 curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getcert?user=SD_USER | jq -r .data.certificate > usercert.pem
 
+# Extract the publick key
 openssl x509 -pubkey -in usercert.pem -nocert > pubkey.pem
 
+# Encrypt
 openssl pkeyutl -encrypt -pubin -inkey pubkey.pem -in "IN_FILENAME" -out "IN_FILENAME.enc"
+

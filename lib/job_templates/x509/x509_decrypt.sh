@@ -3,9 +3,9 @@
 ################################################
 #
 # Decrypt a file encrypted to you with openssl.
-# You must run this on a worker owned by yourself
-# - as only from such a pod will you be allowed to 
-# download your SSL key.
+# Notice: This template has the batch directive -v MY_SSL_DN,
+# implying that it will only be picked up by worker pods
+# you yourself start.
 #
 ################################################
 #
@@ -25,3 +25,5 @@ curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getkey | jq -r .data.private_
 
 # Decrypt
 openssl pkeyutl -decrypt -inkey userkey_unenc.pem -in "IN_FILENAME" -out "IN_BASENAME"
+
+

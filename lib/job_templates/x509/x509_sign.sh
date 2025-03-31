@@ -4,6 +4,9 @@
 #
 # Generate a file signature with openssl using your
 # ScienceData RSA private key.
+# Notice: This template has the batch directive -v MY_SSL_DN,
+# implying that it will only be picked up by worker pods
+# you yourself start.
 #
 ################################################
 #

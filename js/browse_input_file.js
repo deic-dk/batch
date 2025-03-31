@@ -23,7 +23,7 @@ $(document).ready(function(){
  		choose_input_file_dialog.dialog("close");
 	};
 	choose_input_file_dialog = $("div.batch_input_file_dialog").dialog({//create dialog, but keep it closed
-   title: t("batch", "Choose folder"),
+   title: t("batch", "Choose file"),
     autoOpen: false,
     height: 440,
     width: 620,

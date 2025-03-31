@@ -98,7 +98,7 @@ $(document).ready(function() {
 		var dir = FileList.getCurrentDirectory();
 		for( var i=0;i<selectedFiles.length;++i){
 			if(selectedFiles[i].mimetype!='httpd/unix-directory'){
-				files.push(dir+'/'+selectedFiles[i].name);
+				files.push(encodeURI(dir+'/'+selectedFiles[i].name));
 			}
 		}
 		var dir  = $('.viewcontainer:not(.hidden) #dir').val();

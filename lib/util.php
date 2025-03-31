@@ -287,6 +287,7 @@ class OC_Batch_Util {
 		$homeServerInternalUrl = \OCA\FilesSharding\Lib::getServerForUser($this->user, true);
 		$homeServerPrivateUrl = \OCA\FilesSharding\Lib::internalToPrivate($homeServerInternalUrl);
 		$inputFileUrl = $homeServerPrivateUrl.'/grid'.$inputFile;
+		$inputFolderUrl = preg_replace('|/[^/]+$|', '/', $inputFileUrl);
 		$inputFilename = basename($inputFile);
 		$inputFileBasename = preg_replace('|\.[^\.]+$|', '', $inputFilename);
 		$batch_folder = \OCP\Config::getUserValue($this->user, 'batch', 'batch_folder');
@@ -295,6 +296,7 @@ class OC_Batch_Util {
 		$pos = strpos($jobScriptText, '#GRIDFACTORY');
 		$jobScriptText = substr_replace($jobScriptText, "#GRIDFACTORY -u " . $job_id . "\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));
 		$jobScriptText = str_replace('IN_FILE_URL', $inputFileUrl, $jobScriptText);
+		$jobScriptText = str_replace('IN_FOLDER_URL', $inputFolderUrl, $jobScriptText);
 		$jobScriptText = str_replace('IN_FILENAME', $inputFilename, $jobScriptText);
 		$jobScriptText = str_replace('IN_BASENAME', $inputFileBasename, $jobScriptText);
 		$jobScriptText = str_replace('WORK_FOLDER_URL', $batch_folder_url, $jobScriptText);

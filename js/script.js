@@ -188,7 +188,7 @@ function listJobs(callback){
 
 function submitJob(job_template_text, input_file, group){
 	var files = [];
-	files.push(input_file);
+	files.push(encodeURI(input_file));
 	$.ajax({
 		url: OC.filePath('batch', 'ajax', 'actions.php'),
 		data: {

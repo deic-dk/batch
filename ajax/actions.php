@@ -104,7 +104,6 @@ elseif($_REQUEST['action']=='get_file'){
 	}
 	$filename = $_REQUEST['filename'];
 	$url = $_REQUEST['url'];
-	$file_content = "";
 	if(!empty($_REQUEST['download']) && ($_REQUEST['download']=='true'||$_REQUEST['download']===true)){
 		// This is loaded by setting window.location. Sending the headers below triggers download w/o change of URL
 		header('Content-Type: application/octet-stream');

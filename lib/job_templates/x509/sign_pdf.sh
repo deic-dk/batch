@@ -38,5 +38,5 @@ curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getcert?user=SD_USER | jq -r 
 curl -O https://sciencedata.dk/themes/deic_theme_oc7/core/img/sciencedata_signature.png
 
 # Sign
-java -jar $OPENPDFSIGN_JAR --page -1 --image sciencedata_signature.png --hint "Check the validity of this signature at sciencedata.dk" --input IN_FILENAME --output IN_BASENAME.signed.pdf --certificate usercert.pem --key userkey_unenc.pem
+java -jar $OPENPDFSIGN_JAR --page -1 --image sciencedata_signature.png --hint "Check the validity of this signature at sciencedata.dk" --input IN_FILENAME_RAW --output IN_BASENAME.signed.pdf --certificate usercert.pem --key userkey_unenc.pem
 

@@ -30,5 +30,5 @@ curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getcert?user=SD_USER | jq -r 
 openssl x509 -pubkey -in usercert.pem -nocert > pubkey.pem
 
 # Encrypt
-openssl pkeyutl -encrypt -pubin -inkey pubkey.pem -in "IN_FILENAME" -out "IN_FILENAME.enc"
+openssl pkeyutl -encrypt -pubin -inkey pubkey.pem -in "IN_FILENAME_RAW" -out "IN_FILENAME.enc"
 

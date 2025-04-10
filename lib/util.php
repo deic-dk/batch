@@ -288,13 +288,18 @@ class OC_Batch_Util {
 		$homeServerPrivateUrl = \OCA\FilesSharding\Lib::internalToPrivate($homeServerInternalUrl);
 		$inputFileUrl = $homeServerPrivateUrl.'/grid'.$inputFile;
 		$inputFolderUrl = preg_replace('|/[^/]+$|', '/', $inputFileUrl);
+		// $inputFile is encoded by js
 		$inputFilename = basename($inputFile);
+		$inputFilenameRaw = rawurldecode($inputFilename);
 		$inputFileBasename = preg_replace('|\.[^\.]+$|', '', $inputFilename);
+		$inputFileBasenameRaw = rawurldecode($inputFileBasename);
 		$batch_folder = \OCP\Config::getUserValue($this->user, 'batch', 'batch_folder');
 		$batch_folder_url = $homeServerPrivateUrl.'/grid'.$batch_folder;
 		# Substitute in job script
 		$pos = strpos($jobScriptText, '#GRIDFACTORY');
 		$jobScriptText = substr_replace($jobScriptText, "#GRIDFACTORY -u " . $job_id . "\n#GRIDFACTORY", $pos, strlen('#GRIDFACTORY'));
+		$jobScriptText = str_replace('IN_FILENAME_RAW', $inputFilenameRaw, $jobScriptText);
+		$jobScriptText = str_replace('IN_BASENAME_RAW', $inputFileBasenameRaw, $jobScriptText);
 		$jobScriptText = str_replace('IN_FILE_URL', $inputFileUrl, $jobScriptText);
 		$jobScriptText = str_replace('IN_FOLDER_URL', $inputFolderUrl, $jobScriptText);
 		$jobScriptText = str_replace('IN_FILENAME', $inputFilename, $jobScriptText);

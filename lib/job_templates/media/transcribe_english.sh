@@ -2,22 +2,23 @@
 
 ################################################
 #
-# Simple example job template: compress file with XZ.
+# Transcribe audio of mp4 video or m4a file
+# using the OpenAI Whisper.
 #
 ################################################
 #
 # Batch system directives
 #
 #GRIDFACTORY -i IN_FILE_URL
-#GRIDFACTORY -o IN_FILENAME.xz WORK_FOLDER_URL/output_files/IN_FILENAME.xz
-#GRIDFACTORY -r UTIL/XZ
-#GRIDFACTORY -n XZ-IN_FILENAME
+#GRIDFACTORY -o IN_BASENAME.srt IN_FOLDER_URL/IN_BASENAME.srt
+#GRIDFACTORY -r UTIL/WhisperUtil
+#GRIDFACTORY -n whisper-IN_FILENAME
 #GRIDFACTORY -s MY_SSL_DN
 #
 ################################################
 
-xz 'IN_FILENAME_RAW'
-
+language=English whisper.sh 'IN_FILENAME_RAW'
 if [[ "IN_FILENAME_RAW" != "IN_FILENAME" ]]; then
-  mv 'IN_FILENAME_RAW.xz' 'IN_FILENAME.xz'
+  mv 'IN_BASENAME_RAW.srt' 'IN_BASENAME.srt'
 fi
+

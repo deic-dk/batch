@@ -27,7 +27,7 @@
 #curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getcert?user=SD_USER | jq -r .data.certificate > usercert.pem
 
 # Fetch the signature file
-curl --insecure "IN_FILE_URL.sig" > "IN_FILENAME.sig"
+curl --insecure "IN_FILE_URL.sig" > "IN_FILENAME_RAW.sig"
 
 # Fetch the public certificate
 curl --insecure "IN_FOLDER_URL/usercert.pem" > "usercert.pem"
@@ -36,5 +36,5 @@ curl --insecure "IN_FOLDER_URL/usercert.pem" > "usercert.pem"
 openssl x509 -pubkey -in usercert.pem -nocert > pubkey.pem
 
 # Verify signature
-openssl dgst -sha256 -verify pubkey.pem -signature "IN_FILENAME.sig" "IN_FILENAME"
+openssl dgst -sha256 -verify pubkey.pem -signature "IN_FILENAME_RAW.sig" "IN_FILENAME_RAW"
 

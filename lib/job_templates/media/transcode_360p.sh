@@ -41,7 +41,7 @@ MEDIA_ROOT = "."
 PORTAL_WORKFLOW = "public"
 TEMP_DIRECTORY = "."
 
-media_file = "IN_FILENAME"
+media_file = "IN_FILENAME_RAW"
 output_filename = "IN_BASENAME.out.mp4"
 
 resolution = 360 # 240, 360, 480, 720, 1080, 1440, 2160
@@ -55,11 +55,6 @@ helper = "HELPER"
 EOF
 
 sed -i "s|HELPER|$helper|" settings.py
-
-# Install dependencies
-
-apt update
-apt -y install python3-filetype python3-pymediainfo
 
 # Run ffmpeg
 

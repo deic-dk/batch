@@ -25,4 +25,4 @@
 curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getkey | jq -r .data.private_key > userkey_unenc.pem
 
 # Sign
-openssl dgst -sha256 -sign userkey_unenc.pem -out "IN_FILENAME.sig" "IN_FILENAME"
+openssl dgst -sha256 -sign userkey_unenc.pem -out "IN_FILENAME.sig" "IN_FILENAME_RAW"

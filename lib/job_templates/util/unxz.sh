@@ -16,4 +16,8 @@
 #
 ################################################
 
-unxz IN_FILENAME
+unxz 'IN_FILENAME_RAW'
+
+if [[ "IN_BASENAME_RAW" != "IN_BASENAME" ]]; then
+  mv 'IN_BASENAME_RAW' 'IN_BASENAME'
+fi

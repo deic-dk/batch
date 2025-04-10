@@ -24,6 +24,6 @@
 curl --insecure HOME_SERVER_PRIVATE_URL/remote.php/getkey | jq -r .data.private_key > userkey_unenc.pem
 
 # Decrypt
-openssl pkeyutl -decrypt -inkey userkey_unenc.pem -in "IN_FILENAME" -out "IN_BASENAME"
+openssl pkeyutl -decrypt -inkey userkey_unenc.pem -in "IN_FILENAME_RAW" -out "IN_BASENAME"
 
 
